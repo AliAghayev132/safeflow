@@ -84,8 +84,13 @@ class AlertService {
       try {
         const alert = await Alert.findById(alertId);
         if (!alert) return;
-        const devices = await SosSignal.distinct("deviceId", { alert: alert._id });
-        const count = Math.max(alert.signalCount, devices.length);
+        // Distinct genuine devices: retro-flagged spam and "I am safe" don't count
+        const devices = await SosSignal.distinct("deviceId", {
+          alert: alert._id,
+          spamFlagged: false,
+          citizenSafe: false,
+        });
+        const count = devices.length;
         const cfg = ConfigService.get("sosCluster");
         const windowMin = Math.round(cfg.windowMs / 60000);
         const hazard = alert.i18n?.params?.hazard;
