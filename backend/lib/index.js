@@ -1,6 +1,7 @@
 // ============ NODE.JS BUILT-INS ============
 export { default as http } from "node:http";
 export { default as path } from "node:path";
+export { default as fs } from "node:fs";
 export { default as crypto } from "node:crypto";
 export { EventEmitter } from "node:events";
 

@@ -4,6 +4,7 @@ import { clsx } from 'clsx'
 
 import { Icon3D, LanguageSwitcher } from '@components/ui'
 import { OfflineBanner } from '@components/OfflineBanner'
+import { ModuleBanners } from '@components/ModuleBanners'
 import { ConnectionPill } from '@components/ConnectionPill'
 import { ContrastToggle } from '@/modules/accessibility'
 
@@ -67,6 +68,7 @@ export const CitizenLayout = () => {
       </header>
 
       <OfflineBanner />
+      <ModuleBanners />
 
       <main id="main" tabIndex={-1} className="mx-auto w-full max-w-6xl flex-1 px-3 pb-28 pt-3 focus:outline-none sm:px-4 md:pb-8">
         <Outlet />

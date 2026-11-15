@@ -1,0 +1,24 @@
+# SafeFlow edge node backend — /etc/systemd/system/safeflow-edge.service
+#   sudo systemctl enable --now safeflow-edge
+[Unit]
+Description=SafeFlow edge node (assembly point local server)
+After=network-online.target mongod.service
+Wants=network-online.target
+Requires=mongod.service
+
+[Service]
+Type=simple
+User=safeflow
+WorkingDirectory=/opt/safeflow/backend
+EnvironmentFile=/etc/safeflow/edge.env
+ExecStart=/usr/bin/node app.js
+Restart=always
+RestartSec=3
+# The node must keep running through power / network blips
+StartLimitIntervalSec=0
+NoNewPrivileges=true
+ProtectSystem=full
+ProtectHome=true
+
+[Install]
+WantedBy=multi-user.target

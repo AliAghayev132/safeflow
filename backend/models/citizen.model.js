@@ -41,6 +41,9 @@ const citizenSchema = new Schema(
       medical: { type: Boolean, default: false },
     },
     lastSeenAt: { type: Date, default: Date.now },
+    // When the status was set (by the citizen's device clock for synced
+    // edge-node updates) — conflict resolution: the latest status wins.
+    statusAt: { type: Date, default: null },
   },
   { timestamps: true, versionKey: false },
 );
