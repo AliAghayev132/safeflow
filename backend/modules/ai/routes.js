@@ -199,8 +199,9 @@ ChatRouter.post(
       origin: optionalCoords(b.lat, b.lng),
       language: lang(b.language),
     });
-    // Privacy: the question itself is not stored, only what it was about
-    await audit(req, "ai.chat", { type: "chat", id: result.id }, { intents: result.intents, refining: result.refining });
+    // Privacy: the question itself is not stored, only what it was about.
+    // Not awaited: the answer must not wait for the audit write.
+    audit(req, "ai.chat", { type: "chat", id: result.id }, { intents: result.intents, refining: result.refining }).catch(() => null);
     return ok(res, result);
   }),
 );
