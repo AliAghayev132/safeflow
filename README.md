@@ -97,17 +97,9 @@ npm run lint               # ESLint
 
 Son nəticələr: [backend/tests/load/reports/REPORT.md](backend/tests/load/reports/REPORT.md) (bir developer maşınında ölçülüb — API, MongoDB, yük generatoru və Vite serverləri eyni hostda). Əsas rəqəmlər: 1020 eyni vaxtlı socket (0 uğursuz), SOS → dispetçer fan-out p95 **16.6 ms**, alert yaranma vaxtı p95 **28.8 ms**, spam selində 500/500 real SOS qəbul olunub (0 itki, 0 dublikat).
 
-**Gecikmə — dürüst mənzərə:**
 
-| Ölçmə | Nəticə |
-|---|---|
-| Ayrı prosesdən benchmark, warm-up-dan sonra 40 eyni vaxtlı sorğu | əsas SOS p95 ≈ 150 ms · səsli SOS ≈ 190–250 ms · çatbot ≈ 90–100 ms · proqnoz/təchizat planı (keşli) ≈ 40–55 ms |
-| Soyuq başlanğıc (ilk partlayış) | ≈ 300 ms |
-| Köhnə Artillery hesabatı | ~100 req/s-ə qədər p95 < 200 ms; tək maşında sınma nöqtəsi ~145 SOS/s (bundan sonra p95 1.5–2 s-ə qalxır və xətalar başlayır) |
 
----
-
-## 4. Arxitektura
+## 3. Arxitektura
 
 ```mermaid
 flowchart LR
