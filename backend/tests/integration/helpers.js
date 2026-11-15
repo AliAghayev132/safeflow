@@ -38,18 +38,30 @@ const { io } = await import("socket.io-client");
 export let BASE = "";
 export let ORIGIN = "";
 
-export const boot = async () => {
-  // Fresh database per test file
-  await mongoose.connect(process.env.MONGODB_URI);
-  await mongoose.connection.dropDatabase();
-  await mongoose.disconnect();
+// With --test-isolation=none every integration file runs in ONE process and
+// their top-level before/after hooks interleave — so the server is booted
+// once (shared) and shut down when the last file is done.
+let booting = null;
+let users = 0;
 
-  const { port } = await startApp({ port: 0 });
-  ORIGIN = `http://127.0.0.1:${port}`;
-  BASE = `${ORIGIN}/api`;
+export const boot = async () => {
+  users += 1;
+  booting ??= (async () => {
+    // Fresh test database for the run
+    await mongoose.connect(process.env.MONGODB_URI);
+    await mongoose.connection.dropDatabase();
+    await mongoose.disconnect();
+
+    const { port } = await startApp({ port: 0 });
+    ORIGIN = `http://127.0.0.1:${port}`;
+    BASE = `${ORIGIN}/api`;
+  })();
+  return booting;
 };
 
 export const shutdown = async () => {
+  users -= 1;
+  if (users > 0) return;
   await stopApp();
   await new Promise((r) => fakeServer.close(r));
 };

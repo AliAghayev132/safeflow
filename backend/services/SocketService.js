@@ -25,6 +25,17 @@ import { EventLogService } from "./EventLogService.js";
 class SocketService {
   constructor() {
     this.io = null;
+    this.namespaceInits = [];
+  }
+
+  /**
+   * Feature modules attach their own Socket.IO namespaces (with their own
+   * auth) here. Runs immediately if the server is already up, otherwise on
+   * every init().
+   */
+  registerNamespace(setup) {
+    this.namespaceInits.push(setup);
+    if (this.io) setup(this.io);
   }
 
   init(httpServer) {
@@ -41,6 +52,7 @@ class SocketService {
         .catch((error) => next(error));
     });
     this.io.on("connection", (socket) => this.#onConnection(socket));
+    for (const setup of this.namespaceInits) setup(this.io);
     return this.io;
   }
 

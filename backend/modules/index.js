@@ -20,4 +20,6 @@
  *
  * Adding a module = create the folder and add ONE import line below.
  */
-export const modules = [];
+import partner from "./partner/index.js";
+
+export const modules = [partner];

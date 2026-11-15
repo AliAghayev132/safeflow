@@ -1,0 +1,343 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "SafeFlow Partner API",
+    "version": "1.0.0",
+    "description": "Secure crisis data exchange for partner agencies (army, police, ambulance, municipality). OAuth2 client credentials, scope-based access, optional mTLS. Citizen personal data is never exposed — only aggregated information.",
+    "contact": { "name": "SafeFlow crisis center" }
+  },
+  "servers": [{ "url": "/api/partner/v1" }],
+  "security": [{ "oauth2": [] }],
+  "tags": [
+    { "name": "auth" },
+    { "name": "incidents" },
+    { "name": "assembly-points" },
+    { "name": "roads" },
+    { "name": "requests" }
+  ],
+  "paths": {
+    "/oauth/token": {
+      "post": {
+        "tags": ["auth"],
+        "summary": "Obtain an access token (client credentials)",
+        "security": [{ "basicClient": [] }, {}],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/x-www-form-urlencoded": { "schema": { "$ref": "#/components/schemas/TokenRequest" } },
+            "application/json": { "schema": { "$ref": "#/components/schemas/TokenRequest" } }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Token issued",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/TokenResponse" } } }
+          },
+          "400": { "$ref": "#/components/responses/OAuthError" },
+          "401": { "$ref": "#/components/responses/OAuthError" },
+          "404": { "description": "Partner API feature disabled" },
+          "429": { "$ref": "#/components/responses/RateLimited" }
+        }
+      }
+    },
+    "/me": {
+      "get": {
+        "tags": ["auth"],
+        "summary": "The calling client and its effective scopes",
+        "responses": {
+          "200": { "description": "Client", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Me" } } } },
+          "401": { "$ref": "#/components/responses/OAuthError" },
+          "403": { "$ref": "#/components/responses/OAuthError" }
+        }
+      }
+    },
+    "/incidents": {
+      "get": {
+        "tags": ["incidents"],
+        "summary": "Active crisis incidents and per-zone SOS load (aggregated)",
+        "security": [{ "oauth2": ["incidents:read"] }],
+        "responses": {
+          "200": {
+            "description": "Incidents",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/IncidentsResponse" } } }
+          },
+          "401": { "$ref": "#/components/responses/OAuthError" },
+          "403": { "$ref": "#/components/responses/OAuthError" },
+          "429": { "$ref": "#/components/responses/RateLimited" }
+        }
+      }
+    },
+    "/assembly-points": {
+      "get": {
+        "tags": ["assembly-points"],
+        "summary": "Assembly points with live occupancy and fill-time prediction",
+        "security": [{ "oauth2": ["assembly_points:read"] }],
+        "responses": {
+          "200": {
+            "description": "Assembly points",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/AssemblyPointsResponse" } } }
+          },
+          "401": { "$ref": "#/components/responses/OAuthError" },
+          "403": { "$ref": "#/components/responses/OAuthError" },
+          "429": { "$ref": "#/components/responses/RateLimited" }
+        }
+      }
+    },
+    "/roads": {
+      "get": {
+        "tags": ["roads"],
+        "summary": "Closed and congested road segments",
+        "security": [{ "oauth2": ["roads:read"] }],
+        "responses": {
+          "200": { "description": "Roads", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/RoadsResponse" } } } },
+          "401": { "$ref": "#/components/responses/OAuthError" },
+          "403": { "$ref": "#/components/responses/OAuthError" },
+          "429": { "$ref": "#/components/responses/RateLimited" }
+        }
+      }
+    },
+    "/requests": {
+      "post": {
+        "tags": ["requests"],
+        "summary": "Submit a resource / help request to the crisis center",
+        "security": [{ "oauth2": ["requests:write"] }],
+        "requestBody": {
+          "required": true,
+          "content": { "application/json": { "schema": { "$ref": "#/components/schemas/NewRequest" } } }
+        },
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": { "application/json": { "schema": { "type": "object", "properties": { "request": { "$ref": "#/components/schemas/Request" } } } } }
+          },
+          "400": { "$ref": "#/components/responses/OAuthError" },
+          "403": { "$ref": "#/components/responses/OAuthError" },
+          "429": { "$ref": "#/components/responses/RateLimited" }
+        }
+      },
+      "get": {
+        "tags": ["requests"],
+        "summary": "Requests submitted by the calling client",
+        "security": [{ "oauth2": ["requests:write"] }],
+        "parameters": [{ "name": "limit", "in": "query", "schema": { "type": "integer", "maximum": 200 } }],
+        "responses": {
+          "200": {
+            "description": "Requests",
+            "content": { "application/json": { "schema": { "type": "object", "properties": { "requests": { "type": "array", "items": { "$ref": "#/components/schemas/Request" } } } } } }
+          }
+        }
+      }
+    },
+    "/requests/{id}": {
+      "get": {
+        "tags": ["requests"],
+        "summary": "One of the calling client's requests",
+        "security": [{ "oauth2": ["requests:write"] }],
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": {
+          "200": { "description": "Request", "content": { "application/json": { "schema": { "type": "object", "properties": { "request": { "$ref": "#/components/schemas/Request" } } } } } },
+          "404": { "$ref": "#/components/responses/OAuthError" }
+        }
+      }
+    }
+  },
+  "webhooks": {
+    "partnerEvent": {
+      "post": {
+        "summary": "Event delivered to a subscribed partner endpoint",
+        "description": "Headers: X-SafeFlow-Event, X-SafeFlow-Delivery (de-duplicate on it), X-SafeFlow-Timestamp (unix seconds), X-SafeFlow-Signature = 'sha256=' + hex(HMAC_SHA256(secret, timestamp + '.' + rawBody)). Reject timestamps older than 5 minutes. Respond 2xx; anything else is retried with exponential backoff.",
+        "requestBody": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/WebhookEnvelope" } } } },
+        "responses": { "200": { "description": "Accepted" } }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "oauth2": {
+        "type": "oauth2",
+        "flows": {
+          "clientCredentials": {
+            "tokenUrl": "/api/partner/v1/oauth/token",
+            "scopes": {
+              "incidents:read": "Active crisis zones and clusters (aggregated)",
+              "assembly_points:read": "Assembly points and occupancy",
+              "roads:read": "Closed roads",
+              "requests:write": "Submit resource / help requests"
+            }
+          }
+        }
+      },
+      "basicClient": { "type": "http", "scheme": "basic", "description": "client_id:client_secret (token endpoint only)" },
+      "mutualTLS": { "type": "mutualTLS", "description": "Required for clients flagged requireMtls (critical agencies)." }
+    },
+    "responses": {
+      "OAuthError": {
+        "description": "OAuth2-style error",
+        "content": { "application/json": { "schema": { "$ref": "#/components/schemas/OAuthError" } } }
+      },
+      "RateLimited": {
+        "description": "Per-client rate limit exceeded",
+        "headers": { "Retry-After": { "schema": { "type": "integer" }, "description": "Seconds to wait" } },
+        "content": { "application/json": { "schema": { "$ref": "#/components/schemas/OAuthError" } } }
+      }
+    },
+    "schemas": {
+      "TokenRequest": {
+        "type": "object",
+        "required": ["grant_type"],
+        "properties": {
+          "grant_type": { "const": "client_credentials" },
+          "client_id": { "type": "string" },
+          "client_secret": { "type": "string" },
+          "scope": { "type": "string", "description": "Space-separated subset of the client's scopes" }
+        }
+      },
+      "TokenResponse": {
+        "type": "object",
+        "properties": {
+          "access_token": { "type": "string" },
+          "token_type": { "const": "Bearer" },
+          "expires_in": { "type": "integer" },
+          "scope": { "type": "string" }
+        }
+      },
+      "OAuthError": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "string",
+            "enum": ["invalid_request", "invalid_client", "invalid_scope", "unsupported_grant_type", "invalid_token", "insufficient_scope", "access_denied", "rate_limited", "not_found", "server_error"]
+          },
+          "error_description": { "type": "string" }
+        }
+      },
+      "Me": {
+        "type": "object",
+        "properties": {
+          "clientId": { "type": "string" },
+          "name": { "type": "string" },
+          "type": { "type": "string", "enum": ["army", "police", "ambulance", "municipality", "other"] },
+          "status": { "type": "string", "enum": ["active", "limited", "suspended"] },
+          "scopes": { "type": "array", "items": { "type": "string" } },
+          "rateLimitPerMin": { "type": "integer" }
+        }
+      },
+      "LatLng": { "type": "object", "properties": { "lat": { "type": "number" }, "lng": { "type": "number" } } },
+      "Incident": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "kind": { "type": "string", "enum": ["sos_cluster", "assembly_point_overload"] },
+          "severity": { "type": "string" },
+          "status": { "type": "string" },
+          "zone": { "type": ["string", "null"] },
+          "hazard": { "type": ["string", "null"] },
+          "reports": { "type": "integer", "description": "Distinct reporting devices (count only)" },
+          "center": { "$ref": "#/components/schemas/LatLng", "description": "Centroid rounded to ~100 m" },
+          "startedAt": { "type": "string", "format": "date-time" },
+          "updatedAt": { "type": "string", "format": "date-time" }
+        }
+      },
+      "ZoneLoad": {
+        "type": "object",
+        "properties": {
+          "code": { "type": "string" },
+          "name": { "type": "string" },
+          "activeSos": { "type": "integer" },
+          "sosLastWindow": { "type": "integer" }
+        }
+      },
+      "IncidentsResponse": {
+        "type": "object",
+        "properties": {
+          "incidents": { "type": "array", "items": { "$ref": "#/components/schemas/Incident" } },
+          "zones": { "type": "array", "items": { "$ref": "#/components/schemas/ZoneLoad" } },
+          "generatedAt": { "type": "string", "format": "date-time" }
+        }
+      },
+      "AssemblyPoint": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "code": { "type": "string" },
+          "name": { "type": "string" },
+          "type": { "type": "string", "enum": ["shelter", "park", "stadium"] },
+          "location": { "$ref": "#/components/schemas/LatLng" },
+          "address": { "type": ["string", "null"] },
+          "isOpen": { "type": "boolean" },
+          "capacity": { "type": "integer" },
+          "occupancy": { "type": "integer" },
+          "occupancyRate": { "type": "number" },
+          "level": { "type": ["string", "null"], "enum": ["normal", "warning", "critical", null] },
+          "inflowPerMin": { "type": ["number", "null"] },
+          "fillEtaMin": { "type": ["number", "null"] },
+          "accessible": { "type": ["boolean", "null"] },
+          "medicalPoint": { "type": ["boolean", "null"] }
+        }
+      },
+      "AssemblyPointsResponse": {
+        "type": "object",
+        "properties": {
+          "assemblyPoints": { "type": "array", "items": { "$ref": "#/components/schemas/AssemblyPoint" } },
+          "generatedAt": { "type": "string", "format": "date-time" }
+        }
+      },
+      "Road": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "name": { "type": "string" },
+          "status": { "type": "string", "enum": ["open", "closed"] },
+          "congestion": { "type": "number" },
+          "closedReason": { "type": ["string", "null"] },
+          "closedAt": { "type": ["string", "null"], "format": "date-time" },
+          "path": { "type": ["array", "null"], "items": { "type": "array", "items": { "type": "number" } } }
+        }
+      },
+      "RoadsResponse": {
+        "type": "object",
+        "properties": {
+          "roads": { "type": "array", "items": { "$ref": "#/components/schemas/Road" } },
+          "generatedAt": { "type": "string", "format": "date-time" }
+        }
+      },
+      "NewRequest": {
+        "type": "object",
+        "required": ["type", "title"],
+        "properties": {
+          "type": { "type": "string", "enum": ["resources", "help", "evacuation_support", "medical", "transport", "other"] },
+          "priority": { "type": "string", "enum": ["urgent", "normal"] },
+          "title": { "type": "string", "maxLength": 160 },
+          "description": { "type": "string", "maxLength": 2000 },
+          "quantity": { "type": "number", "minimum": 0 },
+          "unit": { "type": "string" },
+          "location": { "$ref": "#/components/schemas/LatLng" }
+        }
+      },
+      "Request": {
+        "allOf": [
+          { "$ref": "#/components/schemas/NewRequest" },
+          {
+            "type": "object",
+            "properties": {
+              "id": { "type": "string" },
+              "status": { "type": "string", "enum": ["submitted", "acknowledged", "in_progress", "fulfilled", "rejected"] },
+              "response": { "type": ["string", "null"] },
+              "createdAt": { "type": "string", "format": "date-time" },
+              "updatedAt": { "type": "string", "format": "date-time" }
+            }
+          }
+        ]
+      },
+      "WebhookEnvelope": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "description": "Delivery id" },
+          "event": { "type": "string", "enum": ["incident.created", "incident.updated", "assembly_point.updated", "road.updated", "request.updated"] },
+          "createdAt": { "type": "string", "format": "date-time" },
+          "data": { "description": "Incident | AssemblyPoint | Road[] | Request" }
+        }
+      }
+    }
+  }
+}
