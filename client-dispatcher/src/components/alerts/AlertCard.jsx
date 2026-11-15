@@ -22,65 +22,116 @@ import { Icon3D } from '../ui/Icon3D'
 import { Badge } from '../ui/Badge'
 import { StatusBadge } from '../ui/StatusBadge'
 import { Button } from '../ui/Button'
+import { BrigadePicker } from '../brigades/BrigadePicker'
 
 const etaMin = (sec) => Math.max(1, Math.round((Number(sec) || 0) / 60))
 
 /**
- * Brigade auto-suggestion on an active alert: recommended brigade + ETA,
- * pick an alternative with one click, or — when none is free — the brigade
- * that frees up soonest.
+ * Brigade auto-suggestion on an active alert: recommended brigade + ETA and
+ * alternatives as toggle chips — the dispatcher can send ONE or a whole team
+ * (and add any other free brigade with the picker). When none is free, the
+ * brigade that frees up soonest is shown.
  */
-const BrigadeSuggestion = ({ suggestion, chosen, onChoose }) => {
+const BrigadeSuggestion = ({ suggestion, team, onTeam, target, brigadeType }) => {
   const { t } = useTranslation()
+  const brigades = useSelector(selectBrigadeEntities)
   if (!suggestion) return null
   const options = [suggestion.suggestion, ...(suggestion.alternatives ?? [])].filter(Boolean)
+  const selected = team ?? (options[0] ? [options[0].brigadeId] : [])
+  const optionIds = new Set(options.map((o) => o.brigadeId))
+  const extras = selected.filter((id) => !optionIds.has(id))
+
+  const toggle = (id) => {
+    const next = selected.includes(id) ? selected.filter((x) => x !== id) : [...selected, id]
+    onTeam(next)
+  }
+
+  const picker = (
+    <BrigadePicker
+      target={target}
+      preferredType={brigadeType}
+      exclude={selected}
+      label={t('brigadePicker.reinforce')}
+      submitLabel={t('brigadePicker.addToTeam')}
+      onSubmit={(ids) => {
+        onTeam([...selected, ...ids])
+        return true
+      }}
+    />
+  )
 
   if (!options.length) {
     const soon = suggestion.soonestFree
     return (
-      <p className="mt-1 text-xs font-medium text-warning flex items-start gap-1" role="status">
-        <CircleSlash className="w-3.5 h-3.5 mt-0.5 shrink-0" />
-        {soon
-          ? t('suggest.noneFree', { name: soon.name, free: etaMin(soon.freeInSec), eta: etaMin(soon.etaSec) })
-          : t('suggest.noneAtAll')}
-      </p>
+      <div className="mt-1.5 space-y-1.5">
+        <p className="text-xs font-medium text-warning flex items-start gap-1" role="status">
+          <CircleSlash className="w-3.5 h-3.5 mt-0.5 shrink-0" />
+          {soon
+            ? t('suggest.noneFree', { name: soon.name, free: etaMin(soon.freeInSec), eta: etaMin(soon.etaSec) })
+            : t('suggest.noneAtAll')}
+        </p>
+        {extras.length > 0 && <TeamChips ids={extras} brigades={brigades} onToggle={toggle} />}
+      </div>
     )
   }
 
   return (
-    <div className="mt-1.5 flex flex-wrap gap-1.5" role="radiogroup" aria-label={t('suggest.choose')}>
-      {options.map((o, i) => {
-        const selected = (chosen ?? options[0].brigadeId) === o.brigadeId
-        return (
-          <button
-            key={o.brigadeId}
-            type="button"
-            role="radio"
-            aria-checked={selected}
-            onClick={() => onChoose(i === 0 ? null : o.brigadeId)}
-            className={clsx(
-              'h-8 px-2.5 rounded-lg border text-xs font-semibold cursor-pointer inline-flex items-center gap-1.5',
-              selected ? 'bg-critical text-white border-critical' : 'bg-panel border-border text-muted hover:text-text'
-            )}
-          >
-            {selected && <Check className="w-3.5 h-3.5" />}
-            {o.name} · {t('suggest.eta', { minutes: etaMin(o.etaSec) })}
-            {!o.typeMatch && <span className="opacity-75">· {t('suggest.otherType')}</span>}
-          </button>
-        )
-      })}
+    <div className="mt-1.5 space-y-1.5">
+      <div className="flex flex-wrap items-center gap-1.5" role="group" aria-label={t('suggest.choose')}>
+        {options.map((o) => {
+          const on = selected.includes(o.brigadeId)
+          return (
+            <button
+              key={o.brigadeId}
+              type="button"
+              role="checkbox"
+              aria-checked={on}
+              onClick={() => toggle(o.brigadeId)}
+              className={clsx(
+                'h-8 px-2.5 rounded-lg border text-xs font-semibold cursor-pointer inline-flex items-center gap-1.5 transition-colors',
+                on ? 'bg-critical text-white border-critical' : 'bg-panel border-border text-muted hover:text-text'
+              )}
+            >
+              {on && <Check className="w-3.5 h-3.5" />}
+              {o.name} · {t('suggest.eta', { minutes: etaMin(o.etaSec) })}
+              {!o.typeMatch && <span className="opacity-75">· {t('suggest.otherType')}</span>}
+            </button>
+          )
+        })}
+        <TeamChips ids={extras} brigades={brigades} onToggle={toggle} />
+        {picker}
+      </div>
+      {selected.length > 1 && (
+        <p className="text-xs font-semibold text-text">{t('brigadePicker.teamOf', { count: selected.length })}</p>
+      )}
     </div>
   )
 }
 
-const ActionRow = ({ action, decided, chosen, onChoose }) => {
+const TeamChips = ({ ids, brigades, onToggle }) =>
+  ids.map((id) => (
+    <button
+      key={id}
+      type="button"
+      role="checkbox"
+      aria-checked
+      onClick={() => onToggle(id)}
+      className="h-8 px-2.5 rounded-lg border border-critical bg-critical text-white text-xs font-semibold inline-flex items-center gap-1.5 cursor-pointer"
+    >
+      <Check className="w-3.5 h-3.5" />
+      {brigades[id]?.name ?? id}
+    </button>
+  ))
+
+const ActionRow = ({ action, decided, team, onTeam, target }) => {
   const { t } = useTranslation()
   const brigades = useSelector(selectBrigadeEntities)
   const shelters = useSelector(selectShelterEntities)
 
   let label
   if (action.type === 'dispatch_brigade') {
-    const name = brigades[action.brigade]?.name
+    const ids = decided && action.brigades?.length ? action.brigades : action.brigade ? [action.brigade] : []
+    const name = ids.map((id) => brigades[id]?.name).filter(Boolean).join(', ')
     label = name ? t('alert.action.dispatch_brigade', { name }) : t('alert.action.dispatch_brigade_none')
   } else {
     label = t('alert.action.open_shelter', { name: shelters[action.shelter]?.name ?? t('app.none') })
@@ -92,7 +143,13 @@ const ActionRow = ({ action, decided, chosen, onChoose }) => {
       <div className="flex-1 min-w-0">
         <p className="text-sm text-text leading-snug">{label}</p>
         {!decided && action.type === 'dispatch_brigade' && (
-          <BrigadeSuggestion suggestion={action.suggestion} chosen={chosen} onChoose={onChoose} />
+          <BrigadeSuggestion
+            suggestion={action.suggestion}
+            team={team}
+            onTeam={onTeam}
+            target={target}
+            brigadeType={action.brigadeType}
+          />
         )}
         {decided && (
           <p
@@ -125,8 +182,8 @@ export const AlertCard = ({ alert, onFocus, fresh = false }) => {
   const [approve, { isLoading: approving }] = useApproveAlertMutation()
   const [reject, { isLoading: rejecting }] = useRejectAlertMutation()
   const [resolve, { isLoading: resolving }] = useResolveAlertMutation()
-  // Dispatcher may pick an alternative brigade before approving (null = suggested one)
-  const [chosenBrigade, setChosenBrigade] = useState(null)
+  // Dispatcher may pick another brigade or a whole team (null = the suggested one)
+  const [team, setTeam] = useState(null)
 
   const isActive = alert.status === 'active'
   const type = ALERT_TYPES[alert.type] ?? ALERT_TYPES.sos_cluster
@@ -141,7 +198,7 @@ export const AlertCard = ({ alert, onFocus, fresh = false }) => {
 
   const onApprove = async () => {
     const result = await run(
-      approve(chosenBrigade ? { id: alert.id, brigadeId: chosenBrigade } : alert.id),
+      approve(team?.length ? { id: alert.id, brigadeIds: team } : alert.id),
       'toast.alertApproved'
     )
     if (result) dispatch(alertAcknowledged(alert.id))
@@ -217,8 +274,9 @@ export const AlertCard = ({ alert, onFocus, fresh = false }) => {
                 key={action.id}
                 action={action}
                 decided={!isActive}
-                chosen={chosenBrigade}
-                onChoose={setChosenBrigade}
+                team={team}
+                onTeam={setTeam}
+                target={{ lat: alert.lat, lng: alert.lng }}
               />
             ))}
           </ul>

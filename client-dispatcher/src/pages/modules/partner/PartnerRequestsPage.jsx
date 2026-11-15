@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Save, MapPin } from 'lucide-react'
 
-import { Card, Table, Button, Icon3D, EmptyState, PageLoader, StatusBadge, Badge } from '@components'
+import { Card, Table, Button, Icon3D, EmptyState, PageLoader, StatusBadge, Badge, Select } from '@components'
 import { useAction } from '@store/hooks'
 import { useCan } from '@hooks'
 import { useGetPartnerRequestsQuery, useUpdatePartnerRequestMutation } from '@store/api/partnerApi'
@@ -48,21 +48,14 @@ const RequestRow = ({ r, canDecide }) => {
       <Table.Td>
         {canDecide ? (
           <div className="flex flex-wrap items-center gap-2">
-            <label className="sr-only" htmlFor={`st-${r.id}`}>
-              {t('partnerRequests.status')}
-            </label>
-            <select
-              id={`st-${r.id}`}
+            <Select
+              size="sm"
+              className="w-44"
+              aria-label={t('partnerRequests.status')}
               value={status}
-              onChange={(e) => setStatus(e.target.value)}
-              className="h-9 rounded-lg border border-border bg-panel-2 px-2 text-xs text-text"
-            >
-              {REQUEST_STATUSES.map((s) => (
-                <option key={s} value={s}>
-                  {t(`partnerRequests.statuses.${s}`)}
-                </option>
-              ))}
-            </select>
+              onValueChange={setStatus}
+              options={REQUEST_STATUSES.map((s) => ({ value: s, label: t(`partnerRequests.statuses.${s}`) }))}
+            />
             <label className="sr-only" htmlFor={`rs-${r.id}`}>
               {t('partnerRequests.response')}
             </label>
@@ -107,19 +100,17 @@ export const PartnerRequestsPage = () => {
           subtitle={t('partnerRequests.subtitle')}
           icon={<Icon3D name="megaphone" size={30} />}
           actions={
-            <select
+            <Select
+              size="sm"
+              className="w-48"
               aria-label={t('partnerRequests.filter')}
               value={filter}
-              onChange={(e) => setFilter(e.target.value)}
-              className="h-8 rounded-lg border border-border bg-panel-2 px-2 text-xs text-text"
-            >
-              <option value="">{t('partnerRequests.all')}</option>
-              {REQUEST_STATUSES.map((s) => (
-                <option key={s} value={s}>
-                  {t(`partnerRequests.statuses.${s}`)}
-                </option>
-              ))}
-            </select>
+              onValueChange={setFilter}
+              options={[
+                { value: '', label: t('partnerRequests.all') },
+                ...REQUEST_STATUSES.map((s) => ({ value: s, label: t(`partnerRequests.statuses.${s}`) })),
+              ]}
+            />
           }
         />
       </Card>

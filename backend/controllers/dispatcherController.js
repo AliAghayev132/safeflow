@@ -53,18 +53,45 @@ const getSos = asyncHandler(async (req, res) => {
   return ok(res, { sos: sos.toPublic(), profile });
 });
 
-/** POST /api/dispatcher/sos/:id/assign { brigadeId? } — one-click Confirm. */
+/** Optional list of brigade ids from the body (multi-brigade dispatch). */
+const brigadeIdsFrom = (body) => {
+  const raw = body?.brigadeIds;
+  if (raw === undefined || raw === null) return undefined;
+  if (!Array.isArray(raw) || raw.some((v) => typeof v !== "string" || !/^[a-f\d]{24}$/i.test(v))) {
+    throw AppError.badRequest("brigadeIds briqada id-lərinin siyahısı olmalıdır", "INVALID_BRIGADE_IDS");
+  }
+  return raw;
+};
+
+/**
+ * POST /api/dispatcher/sos/:id/assign { brigadeId? | brigadeIds? }
+ * One-click Confirm (recommended brigade), a specific brigade, or a team of
+ * several — also adds reinforcements to an already assigned SOS.
+ */
 const assignSos = asyncHandler(async (req, res) => {
-  const { sos, brigade } = await TriageService.assign(req.params.id, {
+  const brigadeIds = brigadeIdsFrom(req.body);
+  const { sos, brigade, brigades } = await TriageService.assign(req.params.id, {
     brigadeId: req.body?.brigadeId ?? undefined,
+    brigadeIds,
   });
   await AuditService.fromRequest(
     req,
     "sos.assign",
     { type: "sos", id: sos._id, label: sos.type },
-    { brigade: brigade.code, priority: sos.priority, recommended: !req.body?.brigadeId },
+    {
+      brigade: brigade.code,
+      brigades: brigades.map((b) => b.code),
+      priority: sos.priority,
+      recommended: !req.body?.brigadeId && !brigadeIds?.length,
+    },
   );
-  return ok(res, { sos: sos.toPublic(), brigade: brigade.toPublic() }, "Briqada göndərildi", 200, "SOS_ASSIGNED");
+  return ok(
+    res,
+    { sos: sos.toPublic(), brigade: brigade.toPublic(), brigades: brigades.map((b) => b.toPublic()) },
+    brigades.length > 1 ? `${brigades.length} briqada göndərildi` : "Briqada göndərildi",
+    200,
+    "SOS_ASSIGNED",
+  );
 });
 
 /** PATCH /api/dispatcher/sos/:id/status { status } */
@@ -84,7 +111,12 @@ const listAlerts = asyncHandler(async (req, res) => {
 
 const decide = (action, fn, code) =>
   asyncHandler(async (req, res) => {
-    const choice = req.body?.brigadeId ? { brigadeId: String(req.body.brigadeId) } : {};
+    const brigadeIds = brigadeIdsFrom(req.body);
+    const choice = brigadeIds?.length
+      ? { brigadeIds }
+      : req.body?.brigadeId
+        ? { brigadeId: String(req.body.brigadeId) }
+        : {};
     const alert = await fn(req.params.id, req.operator, choice);
     await AuditService.fromRequest(
       req,
@@ -126,7 +158,10 @@ const getMyBrigade = asyncHandler(async (req, res) => {
   const brigade = await Brigade.findById(req.principal.brigadeId);
   if (!brigade) throw AppError.notFound("Briqada tapılmadı");
   const [sos, alert] = await Promise.all([
-    SosSignal.find({ brigade: brigade._id, status: { $in: ["assigned", "pending"] } }).sort({ priority: -1 }),
+    SosSignal.find({
+      $or: [{ brigade: brigade._id }, { brigades: brigade._id }],
+      status: { $in: ["assigned", "pending"] },
+    }).sort({ priority: -1 }),
     brigade.alert ? Alert.findById(brigade.alert) : null,
   ]);
   return ok(res, {

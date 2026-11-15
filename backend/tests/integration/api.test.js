@@ -496,6 +496,68 @@ describe("Simulation reset", () => {
     assert.equal(after.sos.length, 0);
     assert.equal(after.alerts.length, 0);
     const queue = (await api("GET", "/dispatcher/sos/queue", { token: dispatcher.accessToken })).data;
-    assert.equal((queue.items ?? queue.sos ?? queue).length ?? 0, 0);
+    assert.equal(queue.queue.length, 0);
+  });
+});
+
+describe("Multi-brigade dispatch", () => {
+  const free = async () =>
+    (await api("GET", "/dispatcher/overview", { token: dispatcher.accessToken })).data.brigades.filter(
+      (b) => b.status === "available",
+    );
+
+  test("several brigades are sent to one SOS, reinforcements can be added, busy ones are refused", async () => {
+    await resetWorld();
+    const sos = (await sendSos({ type: "collapse", ...YASAMAL })).data.sos;
+    const [a, b, c] = await free();
+
+    const r = await api("POST", `/dispatcher/sos/${sos.id}/assign`, {
+      token: dispatcher.accessToken,
+      body: { brigadeIds: [a.id, b.id] },
+    });
+    assert.equal(r.status, 200);
+    assert.deepEqual(new Set(r.data.sos.brigades), new Set([a.id, b.id]));
+    assert.equal(r.data.brigades.length, 2);
+    assert.equal(r.data.sos.status, "assigned");
+
+    // Reinforcement for an assigned SOS
+    const more = await api("POST", `/dispatcher/sos/${sos.id}/assign`, {
+      token: dispatcher.accessToken,
+      body: { brigadeIds: [c.id] },
+    });
+    assert.equal(more.status, 200);
+    assert.equal(more.data.sos.brigades.length, 3);
+
+    // A busy brigade in the team → nothing is dispatched (all-or-nothing)
+    const sos2 = (await sendSos({ type: "fire", lat: 40.38, lng: 49.84 })).data.sos;
+    const [d] = await free();
+    const busy = await api("POST", `/dispatcher/sos/${sos2.id}/assign`, {
+      token: dispatcher.accessToken,
+      body: { brigadeIds: [d.id, a.id] },
+    });
+    assert.equal(busy.status, 409);
+    assert.ok((await free()).some((x) => x.id === d.id), "free brigade was not dispatched");
+
+    // Malformed ids
+    const bad = await api("POST", `/dispatcher/sos/${sos2.id}/assign`, {
+      token: dispatcher.accessToken,
+      body: { brigadeIds: ["nope"] },
+    });
+    assert.equal(bad.status, 400);
+  });
+
+  test("approving a cluster alert can dispatch a whole team", async () => {
+    await resetWorld();
+    for (let i = 0; i < 4; i++) await sendSos({ type: "collapse", ...YASAMAL });
+    const alert = await waitFor(async () => (await activeClusterAlerts())[0]);
+    const team = (await free()).slice(0, 3).map((b) => b.id);
+    const r = await api("POST", `/dispatcher/alerts/${alert.id}/approve`, {
+      token: dispatcher.accessToken,
+      body: { brigadeIds: team },
+    });
+    assert.equal(r.status, 200);
+    const action = r.data.alert.actions.find((x) => x.type === "dispatch_brigade");
+    assert.equal(action.executed, true);
+    assert.deepEqual(new Set(action.brigades), new Set(team));
   });
 });

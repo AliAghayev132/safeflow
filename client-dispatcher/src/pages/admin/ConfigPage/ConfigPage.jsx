@@ -13,7 +13,7 @@ import { useTranslation } from 'react-i18next'
 import { Save, RotateCcw, Undo2, Lock, PencilLine } from 'lucide-react'
 
 // Components
-import { Card, Button, Icon3D, PageLoader, EmptyState, Badge } from '@components'
+import { Card, Button, Icon3D, PageLoader, EmptyState, Badge, useConfirm } from '@components'
 
 // Hooks / helpers
 import { useCan } from '@hooks'
@@ -86,6 +86,7 @@ const Field = ({ path, value, defaultValue, overridden, draft, onChange, readOnl
  */
 export const ConfigPage = () => {
   const { t } = useTranslation()
+  const confirm = useConfirm()
   const dispatch = useDispatch()
   const canManage = useCan('config:manage')
   const { data, isLoading, isError } = useGetConfigQuery()
@@ -125,7 +126,7 @@ export const ConfigPage = () => {
   }
 
   const onReset = async () => {
-    if (!window.confirm(t('config.resetConfirm'))) return
+    if (!(await confirm({ title: t('config.reset'), message: t('config.resetConfirm'), tone: 'warning', confirmLabel: t('config.reset') }))) return
     try {
       await reset().unwrap()
       setDraft({})

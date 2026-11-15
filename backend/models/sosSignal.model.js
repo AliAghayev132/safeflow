@@ -63,7 +63,9 @@ const sosSignalSchema = new Schema(
     clientCreatedAt: { type: Date, default: null },
 
     alert: { type: Schema.Types.ObjectId, ref: "Alert", default: null },
+    // Primary (first) brigade — kept for older clients; `brigades` is the full team
     brigade: { type: Schema.Types.ObjectId, ref: "Brigade", default: null },
+    brigades: { type: [{ type: Schema.Types.ObjectId, ref: "Brigade" }], default: [] },
     resolvedAt: { type: Date, default: null },
   },
   { timestamps: true, versionKey: false },
@@ -118,6 +120,7 @@ sosSignalSchema.methods.toPublic = function () {
     queuedOffline: this.queuedOffline,
     alert: id(this.alert),
     brigade: id(this.brigade),
+    brigades: (this.brigades ?? []).map(id),
     createdAt: this.createdAt,
     clientCreatedAt: this.clientCreatedAt,
     resolvedAt: this.resolvedAt,

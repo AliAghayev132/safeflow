@@ -57,17 +57,18 @@ export const dispatcherApi = baseApi.injectEndpoints({
       },
     }),
     assignSos: builder.mutation({
-      query: ({ id, brigadeId }) => ({
+      // { id } recommended brigade · { id, brigadeId } one · { id, brigadeIds } a team / reinforcements
+      query: ({ id, brigadeId, brigadeIds }) => ({
         url: `/dispatcher/sos/${id}/assign`,
         method: 'POST',
-        body: brigadeId ? { brigadeId } : {},
+        body: brigadeIds?.length ? { brigadeIds } : brigadeId ? { brigadeId } : {},
       }),
       transformResponse: (res) => res.data,
       async onQueryStarted(_arg, { dispatch, queryFulfilled }) {
         try {
           const { data } = await queryFulfilled
           dispatch(sosUpserted(data.sos))
-          dispatch(brigadeUpserted(data.brigade))
+          for (const b of data.brigades ?? [data.brigade]) dispatch(brigadeUpserted(b))
         } catch {
           // surfaced by the caller
         }
@@ -86,10 +87,11 @@ export const dispatcherApi = baseApi.injectEndpoints({
       providesTags: ['Alerts'],
     }),
     approveAlert: builder.mutation({
-      // arg: alertId, or { id, brigadeId } when the dispatcher picked an alternative
+      // arg: alertId, { id, brigadeId } (an alternative) or { id, brigadeIds } (a team)
       query: (arg) => {
-        const { id, brigadeId } = typeof arg === 'string' ? { id: arg } : arg
-        return { url: `/dispatcher/alerts/${id}/approve`, method: 'POST', body: brigadeId ? { brigadeId } : undefined }
+        const { id, brigadeId, brigadeIds } = typeof arg === 'string' ? { id: arg } : arg
+        const body = brigadeIds?.length ? { brigadeIds } : brigadeId ? { brigadeId } : undefined
+        return { url: `/dispatcher/alerts/${id}/approve`, method: 'POST', body }
       },
       transformResponse: (res) => res.data.alert,
       onQueryStarted: upsertOnSuccess(alertUpserted, (a) => a),

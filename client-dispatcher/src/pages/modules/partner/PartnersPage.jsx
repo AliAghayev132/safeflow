@@ -2,7 +2,7 @@ import { Fragment, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ChevronDown, ChevronRight, Plus, RotateCw, Trash2, Lock, FileJson } from 'lucide-react'
 
-import { Card, Table, Button, Icon3D, EmptyState, PageLoader, StatusBadge, Badge } from '@components'
+import { Card, Table, Button, Icon3D, EmptyState, PageLoader, StatusBadge, Badge, useConfirm } from '@components'
 import { useAction } from '@store/hooks'
 import { API_ORIGIN } from '@store/api'
 import {
@@ -31,6 +31,7 @@ const STATUS_ACTIONS = [
  */
 export const PartnersPage = () => {
   const { t } = useTranslation()
+  const confirm = useConfirm()
   const run = useAction()
   const { data: meta } = useGetPartnerMetaQuery()
   const { data: clients = [], isLoading } = useGetPartnersQuery(undefined, { pollingInterval: 30000 })
@@ -52,13 +53,13 @@ export const PartnersPage = () => {
     })
 
   const rotateSecret = async (client) => {
-    if (!window.confirm(t('partners.confirmRotate', { name: client.name }))) return
+    if (!(await confirm({ message: t('partners.confirmRotate', { name: client.name }), tone: 'warning' }))) return
     const data = await run(rotate(client.id), 'partners.toastRotated', { name: client.name })
     if (data?.clientSecret) reveal(data.client, data.clientSecret, 'partners.secretRotated')
   }
 
-  const deleteClient = (client) => {
-    if (!window.confirm(t('partners.confirmDelete', { name: client.name }))) return
+  const deleteClient = async (client) => {
+    if (!(await confirm({ message: t('partners.confirmDelete', { name: client.name }), tone: 'critical', confirmLabel: t('app.delete', 'Delete') }))) return
     run(remove(client.id), 'partners.toastDeleted', { name: client.name })
   }
 

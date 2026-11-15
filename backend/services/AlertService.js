@@ -293,8 +293,23 @@ class AlertService {
     }
     const center = fromPoint(alert.location);
 
+    // Dispatcher picked a whole team → validate before anything is executed
+    const team = choice.brigadeIds?.length ? await BrigadeService.pickTeam(choice.brigadeIds) : null;
+
     for (const action of alert.actions) {
       try {
+        if (action.type === "dispatch_brigade" && team) {
+          const sent = await BrigadeService.dispatchTeam(team, center, alert._id);
+          action.brigade = sent[0]._id;
+          action.brigades = sent.map((b) => b._id);
+          action.executed = true;
+          action.result = `${sent.map((b) => b.name).join(", ")} yola düşdü`;
+          const pending = await AlertService.#memberIds(alert, ["pending"]);
+          if (pending.length) {
+            await SosService.setStatusMany(pending, { status: "assigned", brigade: sent[0]._id, brigades: action.brigades });
+          }
+          continue;
+        }
         if (action.type === "dispatch_brigade") {
           const chosen = choice.brigadeId ?? action.brigade;
           let brigade = chosen ? await BrigadeService.getById(chosen).catch(() => null) : null;
@@ -313,12 +328,13 @@ class AlertService {
           }
           await BrigadeService.dispatch(brigade._id, center, alert._id);
           action.brigade = brigade._id;
+          action.brigades = [brigade._id];
           action.executed = true;
           action.result = `${brigade.name} yola düşdü`;
 
           const pending = await AlertService.#memberIds(alert, ["pending"]);
           if (pending.length) {
-            await SosService.setStatusMany(pending, { status: "assigned", brigade: brigade._id });
+            await SosService.setStatusMany(pending, { status: "assigned", brigade: brigade._id, brigades: [brigade._id] });
           }
         }
 

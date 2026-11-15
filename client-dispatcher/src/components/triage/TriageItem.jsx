@@ -1,4 +1,3 @@
-import { useState } from 'react'
 import { useSelector } from 'react-redux'
 import { useTranslation } from 'react-i18next'
 import { clsx } from 'clsx'
@@ -19,7 +18,7 @@ import {
 
 import { useAssignSosMutation } from '@store/api'
 import { useAction } from '@store/hooks'
-import { selectBrigadeEntities, selectBrigades, selectZoneById } from '@store/slices/liveSlice'
+import { selectBrigadeEntities, selectZoneById } from '@store/slices/liveSlice'
 import { SOS_TYPES, SOS_STATUS } from '@constants'
 import { formatAgo } from '@utils'
 import { useNow, useCan } from '@hooks'
@@ -27,6 +26,10 @@ import { Icon3D } from '../ui/Icon3D'
 import { Badge } from '../ui/Badge'
 import { StatusBadge } from '../ui/StatusBadge'
 import { Button } from '../ui/Button'
+import { BrigadePicker } from '../brigades/BrigadePicker'
+
+// Incident type → brigade type shown first in the picker (mirrors backend)
+const BRIGADE_FOR_SOS = { fire: 'fire', medical: 'medical', collapse: 'rescue', flood: 'rescue' }
 
 const VULNERABLE_ICONS = { elderly: PersonStanding, child: Baby, disabled: Accessibility }
 
@@ -119,23 +122,24 @@ export const TriageItem = ({ sos, profile, pinned = false, onFocus }) => {
   const run = useAction()
   const canAssign = useCan('sos:assign')
   const brigades = useSelector(selectBrigadeEntities)
-  const allBrigades = useSelector(selectBrigades)
   const zones = useSelector(selectZoneById)
   const [assign, { isLoading }] = useAssignSosMutation()
-  const [other, setOther] = useState('')
 
   const type = SOS_TYPES[sos.type] ?? SOS_TYPES.general
   const recommended = sos.recommendedBrigade ? brigades[sos.recommendedBrigade] : null
-  const assigned = sos.brigade ? brigades[sos.brigade] : null
-  const available = allBrigades.filter((b) => b.status === 'available')
+  const teamIds = sos.brigades?.length ? sos.brigades : sos.brigade ? [sos.brigade] : []
+  const team = teamIds.map((id) => brigades[id]).filter(Boolean)
+  const target = { lat: sos.lat, lng: sos.lng }
   const vulnerable = Object.entries(sos.vulnerable ?? {}).filter(([, v]) => v)
 
-  const confirm = async (brigadeId) => {
-    const brigadeName = brigadeId ? brigades[brigadeId]?.name : recommended?.name
-    const res = await run(assign({ id: sos.id, brigadeId }), 'toast.sosAssigned', {
-      brigade: brigadeName ?? t('app.none'),
-    })
-    if (res) setOther('')
+  // Recommended brigade (one click)
+  const confirm = () =>
+    run(assign({ id: sos.id }), 'toast.sosAssigned', { brigade: recommended?.name ?? t('app.none') })
+
+  // A team picked in the BrigadePicker (also reinforcements)
+  const sendTeam = (ids) => {
+    const names = ids.map((id) => brigades[id]?.name).filter(Boolean).join(', ')
+    return run(assign({ id: sos.id, brigadeIds: ids }), 'toast.sosAssigned', { brigade: names || t('app.none') })
   }
 
   return (
@@ -243,10 +247,30 @@ export const TriageItem = ({ sos, profile, pinned = false, onFocus }) => {
           {/* Assignment */}
           <div className="mt-2.5 pt-2.5 border-t border-border/70">
             {sos.status === 'assigned' ? (
-              <p className="text-xs text-warning flex items-center gap-1.5">
-                <Icon3D name="fireEngine" size={18} />
-                {t('triage.assigned', { name: assigned?.name ?? t('app.none') })}
-              </p>
+              <div className="flex flex-wrap items-center gap-2">
+                <div className="flex flex-1 min-w-40 flex-wrap items-center gap-1.5">
+                  <Icon3D name="fireEngine" size={18} />
+                  <span className="text-xs font-semibold text-warning">
+                    {team.length > 1 ? t('brigadePicker.team') : t('triage.assigned', { name: team[0]?.name ?? t('app.none') })}
+                  </span>
+                  {team.length > 1 &&
+                    team.map((b) => (
+                      <Badge key={b.id} size="sm" variant="warning">
+                        {b.name}
+                      </Badge>
+                    ))}
+                </div>
+                {canAssign && (
+                  <BrigadePicker
+                    target={target}
+                    preferredType={BRIGADE_FOR_SOS[sos.type]}
+                    exclude={teamIds}
+                    onSubmit={sendTeam}
+                    loading={isLoading}
+                    label={t('brigadePicker.reinforce')}
+                  />
+                )}
+              </div>
             ) : (
               <div className="flex flex-wrap items-center gap-2">
                 <p className="text-xs text-muted flex items-center gap-1.5 flex-1 min-w-40">
@@ -278,30 +302,20 @@ export const TriageItem = ({ sos, profile, pinned = false, onFocus }) => {
                       <Button
                         size="sm"
                         variant="critical"
-                        loading={isLoading && !other}
-                        onClick={() => confirm(undefined)}
+                        loading={isLoading}
+                        onClick={confirm}
                         leftIcon={<Check className="w-3.5 h-3.5" />}
                       >
                         {t('triage.confirm')}
                       </Button>
                     )}
-                    <select
-                      aria-label={t('triage.assignOther')}
-                      value={other}
-                      onChange={(e) => {
-                        setOther(e.target.value)
-                        if (e.target.value) confirm(e.target.value)
-                      }}
-                      disabled={isLoading || available.length === 0}
-                      className="h-8 rounded-lg bg-panel-2 border border-border px-2 text-xs text-text"
-                    >
-                      <option value="">{t('triage.assignOther')}</option>
-                      {available.map((b) => (
-                        <option key={b.id} value={b.id}>
-                          {b.name} · {t(`brigadeType.${b.type}`)}
-                        </option>
-                      ))}
-                    </select>
+                    <BrigadePicker
+                      target={target}
+                      preferredType={BRIGADE_FOR_SOS[sos.type]}
+                      onSubmit={sendTeam}
+                      loading={isLoading}
+                      variant={recommended ? 'secondary' : 'critical'}
+                    />
                   </>
                 )}
               </div>

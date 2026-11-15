@@ -19,7 +19,7 @@ import { useTranslation } from 'react-i18next'
 import { CircleCheck, CircleAlert, WifiOff, Ban, Clock, Copy, KeyRound } from 'lucide-react'
 
 // Components
-import { Card, Icon3D, PageLoader, EmptyState, StatusBadge, StatCard, Table, Button, Input, Select } from '@components'
+import { Card, Icon3D, PageLoader, EmptyState, StatusBadge, StatCard, Table, Button, Input, Select, useConfirm } from '@components'
 
 // Hooks / utils
 import { useCan } from '@hooks'
@@ -79,6 +79,7 @@ const TokenReveal = ({ result, onClose }) => {
  */
 export const EdgeNodesPage = () => {
   const { t } = useTranslation()
+  const confirm = useConfirm()
   const canManage = useCan('edge:manage')
   const run = useAction()
   const shelters = useSelector(selectShelters)
@@ -107,12 +108,12 @@ export const EdgeNodesPage = () => {
     }
   }
   const rotate = async (node) => {
-    if (!window.confirm(t('edge.confirmRotate', { node: node.nodeId }))) return
+    if (!(await confirm({ message: t('edge.confirmRotate', { node: node.nodeId }), tone: 'warning' }))) return
     const data = await run(rotateNode(node.id), 'edge.rotated')
     if (data) setReveal(data)
   }
   const revoke = async (node) => {
-    if (!window.confirm(t('edge.confirmRevoke', { node: node.nodeId }))) return
+    if (!(await confirm({ message: t('edge.confirmRevoke', { node: node.nodeId }), tone: 'critical' }))) return
     await run(revokeNode(node.id), 'edge.revoked')
   }
 

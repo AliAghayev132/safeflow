@@ -81,7 +81,8 @@
     "arrivalMeters": 30,
     "onSceneMinutes": 20,
     "suggestionAlternatives": 3,
-    "mismatchPenaltySec": 600
+    "mismatchPenaltySec": 600,
+    "maxPerIncident": 6
   },
   "events": {
     "bufferSize": 5000

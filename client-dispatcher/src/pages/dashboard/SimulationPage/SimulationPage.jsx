@@ -28,6 +28,7 @@ import {
   EmptyState,
   ScenarioControl,
   StatusBadge,
+  useConfirm,
 } from '@components'
 
 // Constants / utils
@@ -321,10 +322,15 @@ export const SimulationPage = () => {
   const [center, setCenter] = useState(null)
   const [radius, setRadius] = useState(300)
 
-  const onReset = () => {
-    if (window.confirm(t('simulation.resetConfirm'))) {
-      run(reset(), 'toast.simulationReset')
-    }
+  const confirm = useConfirm()
+  const onReset = async () => {
+    const ok = await confirm({
+      title: t('simulation.resetTitle'),
+      message: t('simulation.resetConfirm'),
+      tone: 'critical',
+      confirmLabel: t('simulation.reset'),
+    })
+    if (ok) run(reset(), 'toast.simulationReset')
   }
 
   return (

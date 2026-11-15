@@ -93,6 +93,33 @@ class BrigadeService {
     return (preferredType && pick((b) => b.type === preferredType)) || pick(() => true);
   }
 
+  /**
+   * Validate a team of brigades picked by the dispatcher: unique ids, within
+   * the per-incident cap, all currently available. Throws BEFORE anything is
+   * dispatched, so a team is sent all-or-nothing.
+   */
+  static async pickTeam(ids) {
+    const unique = [...new Set((ids ?? []).map(String).filter(Boolean))];
+    const max = ConfigService.get("brigade").maxPerIncident ?? 6;
+    if (!unique.length) return [];
+    if (unique.length > max) {
+      throw AppError.badRequest(`Bir hadisəyə ən çox ${max} briqada göndərilə bilər`, "TOO_MANY_BRIGADES");
+    }
+    const team = await Promise.all(unique.map((id) => BrigadeService.getById(id)));
+    const busy = team.filter((b) => b.status !== "available");
+    if (busy.length) {
+      throw AppError.conflict(`Hazırda boş deyil: ${busy.map((b) => b.name).join(", ")}`, "BRIGADE_BUSY");
+    }
+    return team;
+  }
+
+  /** Dispatch a validated team to one target. */
+  static async dispatchTeam(team, target, alertId = null) {
+    const sent = [];
+    for (const b of team) sent.push(await BrigadeService.dispatch(b._id, target, alertId));
+    return sent;
+  }
+
   static async dispatch(id, target, alertId = null) {
     const brigade = await BrigadeService.getById(id);
     if (brigade.status !== "available") {

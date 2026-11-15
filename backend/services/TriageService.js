@@ -63,13 +63,28 @@ class TriageService {
    * Confirm: dispatch the given (or recommended, or nearest) brigade to the
    * SOS location and mark the ticket assigned.
    */
-  static async assign(sosId, { brigadeId } = {}) {
+  static async assign(sosId, { brigadeId, brigadeIds } = {}) {
     const sos = await SosSignal.findById(sosId);
     if (!sos) throw AppError.notFound("SOS tapılmadı");
     if (!["pending", "assigned"].includes(sos.status)) {
       throw AppError.conflict("Bu SOS artıq bağlanıb");
     }
     const origin = fromPoint(sos.location);
+
+    // Several brigades picked by the dispatcher (also reinforcements for an
+    // already assigned SOS) — all-or-nothing
+    const picked = [...(brigadeIds ?? []), ...(brigadeId ? [brigadeId] : [])];
+    if (picked.length) {
+      const already = new Set((sos.brigades ?? []).map(String));
+      const team = await BrigadeService.pickTeam(picked.filter((id) => !already.has(String(id))));
+      const max = ConfigService.get("brigade").maxPerIncident ?? 6;
+      if (already.size + team.length > max) {
+        throw AppError.badRequest(`Bir hadisəyə ən çox ${max} briqada göndərilə bilər`, "TOO_MANY_BRIGADES");
+      }
+      if (!team.length) throw AppError.conflict("Bu briqadalar artıq bu hadisədədir");
+      const sent = await BrigadeService.dispatchTeam(team, origin, sos.alert ?? null);
+      return TriageService.#attachTeam(sos, sent);
+    }
 
     let brigade = null;
     const candidateId = brigadeId ?? sos.recommendedBrigade;
@@ -86,13 +101,18 @@ class TriageService {
     if (!brigade) throw AppError.conflict("Boş briqada yoxdur");
 
     brigade = await BrigadeService.dispatch(brigade._id, origin, sos.alert ?? null);
+    return TriageService.#attachTeam(sos, [brigade]);
+  }
 
+  static async #attachTeam(sos, sent) {
+    const ids = [...(sos.brigades ?? []).map(String), ...sent.map((b) => b._id.toString())];
     sos.status = "assigned";
-    sos.brigade = brigade._id;
+    sos.brigades = [...new Set(ids)];
+    sos.brigade ??= sent[0]._id;
     sos.recommendedBrigade = null;
     await sos.save();
     eventBus.publish(domainEvents.SOS_UPDATED, { sos: [sos.toPublic()] });
-    return { sos, brigade };
+    return { sos, brigade: sent[0], brigades: sent };
   }
 }
 
