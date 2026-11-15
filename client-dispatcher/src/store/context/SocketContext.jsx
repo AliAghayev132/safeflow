@@ -112,7 +112,7 @@ export const SocketProvider = ({ children }) => {
           break
         }
         case E.CONFIG_UPDATED:
-          dispatch(baseApi.util.invalidateTags(['Config', 'Rules']))
+          dispatch(baseApi.util.invalidateTags(['Config', 'Rules', 'Features']))
           return
         case E.SYSTEM_RESET:
           buffer = []

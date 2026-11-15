@@ -31,7 +31,8 @@
     "#services": "./services/index.js",
     "#constants": "./constants/index.js",
     "#middlewares": "./middlewares/index.js",
-    "#controllers": "./controllers/index.js"
+    "#controllers": "./controllers/index.js",
+    "#modules": "./modules/index.js"
   },
   "dependencies": {
     "bcryptjs": "^3.0.3",

@@ -7,6 +7,20 @@ import ru from './locales/ru'
 
 const STORAGE_KEY = 'dispatcher.lang'
 
+/**
+ * Feature-module translations: every i18n/modules/*.js exports
+ * { az: {...}, en: {...}, ru: {...} } and is deep-merged into the base
+ * dictionaries — modules never edit the shared locale files.
+ */
+const moduleLocales = Object.values(import.meta.glob('./modules/*.js', { eager: true, import: 'default' }))
+const isObj = (v) => v && typeof v === 'object' && !Array.isArray(v)
+const deepMerge = (a, b) => {
+  const out = { ...a }
+  for (const [k, v] of Object.entries(b ?? {})) out[k] = isObj(v) && isObj(a?.[k]) ? deepMerge(a[k], v) : v
+  return out
+}
+const withModules = (base, lang) => moduleLocales.reduce((acc, m) => deepMerge(acc, m?.[lang]), base)
+
 export const LANGUAGES = [
   { code: 'az', label: 'AZ', locale: 'az-AZ' },
   { code: 'en', label: 'EN', locale: 'en-GB' },
@@ -23,7 +37,11 @@ const readLang = () => {
 }
 
 i18n.use(initReactI18next).init({
-  resources: { az: { translation: az }, en: { translation: en }, ru: { translation: ru } },
+  resources: {
+    az: { translation: withModules(az, 'az') },
+    en: { translation: withModules(en, 'en') },
+    ru: { translation: withModules(ru, 'ru') },
+  },
   lng: readLang(),
   fallbackLng: 'az',
   interpolation: { escapeValue: false },

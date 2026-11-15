@@ -51,15 +51,29 @@ const validatePatch = (patch, shape, path = "") => {
  * rule picks them up without a restart.
  */
 class ConfigService {
+  // Core defaults + sections contributed by feature modules (registerDefaults)
+  static #defaults = structuredClone(crisisDefaults);
   static #overrides = {};
   static #effective = structuredClone(crisisDefaults);
   static #version = 0;
+
+  /**
+   * A feature module contributes its own config section (modules/<name>/
+   * defaults). Must be called before load(). Section names must be unique.
+   */
+  static registerDefaults(section, defaults) {
+    if (Object.hasOwn(crisisDefaults, section)) {
+      throw new Error(`Config section "${section}" is reserved by core defaults`);
+    }
+    ConfigService.#defaults[section] = structuredClone(defaults);
+    ConfigService.#effective = deepMerge(ConfigService.#defaults, ConfigService.#overrides);
+  }
 
   static async load() {
     const doc = await Setting.findOne({ key: KEY }).lean();
     ConfigService.#overrides = doc?.value ?? {};
     ConfigService.#version = doc?.version ?? 0;
-    ConfigService.#effective = deepMerge(crisisDefaults, ConfigService.#overrides);
+    ConfigService.#effective = deepMerge(ConfigService.#defaults, ConfigService.#overrides);
     return ConfigService.#effective;
   }
 
@@ -68,17 +82,26 @@ class ConfigService {
     return section ? ConfigService.#effective[section] : ConfigService.#effective;
   }
 
+  /** Feature flag (config section `features`). Unknown flags are off. */
+  static isEnabled(feature) {
+    return ConfigService.#effective.features?.[feature] === true;
+  }
+
+  static features() {
+    return { ...(ConfigService.#effective.features ?? {}) };
+  }
+
   static snapshot() {
     return {
       effective: ConfigService.#effective,
       overrides: ConfigService.#overrides,
-      defaults: crisisDefaults,
+      defaults: ConfigService.#defaults,
       version: ConfigService.#version,
     };
   }
 
   static async update(patch, operator) {
-    validatePatch(patch, crisisDefaults);
+    validatePatch(patch, ConfigService.#defaults);
     const overrides = deepMerge(ConfigService.#overrides, patch);
     const doc = await Setting.findOneAndUpdate(
       { key: KEY },
@@ -87,7 +110,7 @@ class ConfigService {
     );
     ConfigService.#overrides = doc.value;
     ConfigService.#version = doc.version;
-    ConfigService.#effective = deepMerge(crisisDefaults, doc.value);
+    ConfigService.#effective = deepMerge(ConfigService.#defaults, doc.value);
     eventBus.publish(domainEvents.CONFIG_UPDATED, { config: ConfigService.snapshot(), patch });
     return ConfigService.snapshot();
   }

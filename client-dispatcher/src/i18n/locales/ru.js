@@ -28,6 +28,7 @@ const ru = {
   },
   nav: {
     sectionOperations: 'Операции',
+    sectionResources: 'Ресурсы',
     sectionAdmin: 'Администрирование',
     operations: 'Оперативная панель',
     triage: 'Очередь триажа',

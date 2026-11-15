@@ -45,10 +45,13 @@ export const ALL_TAGS = [
   'System',
   'Scenarios',
   'Alerts',
+  'Features',
 ]
 
 // ============ API INSTANCE ============
 // Endpoints are injected from feature files (authApi, dispatcherApi, ...).
+// Feature modules add their own tag types with
+//   baseApi.enhanceEndpoints({ addTagTypes: [...] }).injectEndpoints(...)
 export const baseApi = createApi({
   reducerPath: 'api',
   baseQuery: baseQueryWithAuth,

@@ -110,10 +110,23 @@ export const ROUTES = [
   },
 ]
 
-export const SECTIONS = ['Operations', 'Admin']
+/**
+ * Feature-module routes: each file in routes/modules/*.js exports
+ * `routes` (same shape as above, plus `feature` = backend feature flag).
+ * Modules never edit this file — they only add their own module file.
+ */
+const moduleFiles = import.meta.glob('./modules/*.js', { eager: true })
+const MODULE_ROUTES = Object.values(moduleFiles).flatMap((m) => m.routes ?? [])
+export const ALL_ROUTES = [...ROUTES, ...MODULE_ROUTES]
 
-/** Routes the user may open, in menu order. */
-export const accessibleRoutes = (permissions) => ROUTES.filter((r) => can(permissions, r.permission))
+export const SECTIONS = ['Operations', 'Resources', 'Admin']
+
+/**
+ * Routes the user may open, in menu order: permission (RBAC) AND, for
+ * feature-module pages, the runtime feature flag must be on.
+ */
+export const accessibleRoutes = (permissions, features = {}) =>
+  ALL_ROUTES.filter((r) => can(permissions, r.permission) && (!r.feature || features[r.feature] === true))
 
 /** Absolute URL of a route entry. */
 export const routeUrl = (route) => `/${route.path}`

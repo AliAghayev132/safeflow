@@ -25,8 +25,16 @@ import {
 // Rules
 import { rules } from "#rules";
 
+// Feature modules (drones, edge node, partner API, volunteers, ...)
+import { modules } from "#modules";
+
+// Module config sections must exist before ConfigService.load()
+for (const mod of modules) {
+  if (mod.defaults) ConfigService.registerDefaults(mod.name, mod.defaults);
+}
+
 // Middlewares
-import { rateLimitFor, securityHeaders, sanitizeInput } from "#middlewares";
+import { rateLimitFor, securityHeaders, sanitizeInput, requireFeature } from "#middlewares";
 
 // Routes
 import {
@@ -69,6 +77,18 @@ const setupRoutes = (app) => {
   app.use("/api/dispatcher", DispatcherRouter); // Module 2
   app.use("/api/simulation", SimulationRouter);
   app.use("/api/admin", AdminRouter);
+
+  // Feature modules — each router is gated by its runtime feature flag
+  for (const mod of modules) {
+    for (const { path, router } of mod.routers ?? []) {
+      app.use(`/api${path}`, requireFeature(mod.feature), router);
+    }
+  }
+
+  // Public feature-flag map (clients hide disabled features)
+  app.get("/api/features", (_req, res) => {
+    res.json({ success: true, data: { features: ConfigService.features() } });
+  });
 
   app.get("/api/health", (_req, res) => {
     res.json({
@@ -160,8 +180,13 @@ const startApp = async ({ port = config.port } = {}) => {
   if (!initialized) {
     RealtimeService.init();
     ruleEngine.registerAll(rules);
+    // Module rules carry their feature flag (skipped while disabled)
+    for (const mod of modules) {
+      for (const rule of mod.rules ?? []) ruleEngine.register({ feature: mod.feature, ...rule });
+    }
     initialized = true;
   }
+  for (const mod of modules) await mod.init?.({ config });
 
   if (config.enableBrigadeTicker) {
     brigadeTicker = setInterval(() => {
@@ -192,6 +217,7 @@ const startApp = async ({ port = config.port } = {}) => {
 const stopApp = async () => {
   clearInterval(brigadeTicker);
   ScenarioService.stop();
+  for (const mod of modules) await mod.stop?.();
   await socketService.close();
   if (httpServer?.listening) await new Promise((resolve) => httpServer.close(resolve));
   await mongoDBService.disconnect();

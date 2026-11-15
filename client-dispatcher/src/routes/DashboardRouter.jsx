@@ -1,5 +1,6 @@
 // React
 import { Suspense } from 'react'
+import { useFeatures } from '@hooks'
 
 // React Router
 import { Navigate, Route, Routes } from 'react-router'
@@ -26,7 +27,8 @@ import { accessibleRoutes, routeUrl } from './routeConfig'
  */
 export const DashboardRouter = () => {
   const permissions = useSelector(selectPermissions)
-  const routes = accessibleRoutes(permissions)
+  const features = useFeatures()
+  const routes = accessibleRoutes(permissions, features)
   const home = routes[0]
 
   return (

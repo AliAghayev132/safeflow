@@ -33,7 +33,7 @@ import {
 import { accessibleRoutes, routeUrl, SECTIONS } from '@routes/routeConfig'
 
 // Hooks / utils / constants
-import { useNow } from '@hooks'
+import { useNow, useFeatures } from '@hooks'
 import { formatTime } from '@utils'
 import { CONNECTION_MODES } from '@constants'
 
@@ -69,7 +69,8 @@ export const DashboardLayout = () => {
   const queue = useSelector(selectTriageQueue)
   const { hydrated, isError, refetch } = useLiveData()
 
-  const routes = accessibleRoutes(permissions)
+  const features = useFeatures()
+  const routes = accessibleRoutes(permissions, features)
   const badges = {
     alerts: activeAlerts.length,
     queue: queue.filter((s) => s.status === 'pending' && !s.spamFlagged).length,

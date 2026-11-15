@@ -28,6 +28,7 @@ const en = {
   },
   nav: {
     sectionOperations: 'Operations',
+    sectionResources: 'Resources',
     sectionAdmin: 'Administration',
     operations: 'Operations board',
     triage: 'Triage queue',

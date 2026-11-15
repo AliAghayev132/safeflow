@@ -3,7 +3,24 @@
   "roles": {
     "citizen": {
       "label": "role.citizen",
-      "permissions": ["sos:create", "sos:read_own", "shelter:read", "road:read", "profile:manage_own"]
+      "permissions": ["sos:create", "sos:read_own", "shelter:read", "road:read", "profile:manage_own", "volunteer:register"]
+    },
+    "volunteer": {
+      "label": "role.volunteer",
+      "inherits": ["citizen"],
+      "permissions": ["volunteer:respond", "volunteer:status"]
+    },
+    "shelter_manager": {
+      "label": "role.shelter_manager",
+      "permissions": [
+        "dashboard:view",
+        "shelter:read",
+        "road:read",
+        "supplies:request",
+        "supplies:confirm",
+        "drones:read",
+        "volunteers:request"
+      ]
     },
     "brigade_lead": {
       "label": "role.brigade_lead",
@@ -33,13 +50,28 @@
         "road:read",
         "simulation:run",
         "rules:read",
-        "config:read"
+        "config:read",
+        "supplies:request",
+        "supplies:manage",
+        "drones:read",
+        "drones:dispatch",
+        "volunteers:read",
+        "volunteers:request",
+        "volunteers:notify_medical",
+        "edge:read"
       ]
     },
     "admin": {
       "label": "role.admin",
       "inherits": ["dispatcher"],
-      "permissions": ["config:manage", "audit:read", "operator:read"]
+      "permissions": [
+        "config:manage",
+        "audit:read",
+        "operator:read",
+        "partners:manage",
+        "volunteers:verify",
+        "edge:manage"
+      ]
     }
   },
   "channels": {
@@ -52,6 +84,10 @@
     "stats": "dashboard:view",
     "config": "config:read",
     "scenario": "dashboard:view",
+    "drones": "drones:read",
+    "supplies": "drones:read",
+    "volunteers": "volunteers:read",
+    "edge": "edge:read",
     "system": null
   }
 }

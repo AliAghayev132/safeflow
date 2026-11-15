@@ -342,6 +342,21 @@ describe("Realtime replay (missed events) + polling fallback", () => {
   });
 });
 
+describe("Feature flags", () => {
+  test("public flag map, toggled at runtime by an admin", async () => {
+    const before = (await api("GET", "/features")).data.features;
+    assert.equal(before.drones, true);
+    await api("PATCH", "/admin/config", { token: admin.accessToken, body: { features: { drones: false } } });
+    assert.equal((await api("GET", "/features")).data.features.drones, false);
+    await api("PATCH", "/admin/config", { token: admin.accessToken, body: { features: { drones: true } } });
+  });
+
+  test("unknown feature flags are rejected", async () => {
+    const r = await api("PATCH", "/admin/config", { token: admin.accessToken, body: { features: { nope: true } } });
+    assert.equal(r.status, 400);
+  });
+});
+
 describe("Config rules engine", () => {
   test("rejects unknown keys and wrong types", async () => {
     assert.equal((await api("PATCH", "/admin/config", { token: admin.accessToken, body: { nope: 1 } })).status, 400);

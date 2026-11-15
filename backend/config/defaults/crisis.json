@@ -1,4 +1,14 @@
 {
+  "features": {
+    "accessibleRouting": true,
+    "smartBalancing": true,
+    "brigadeSuggestion": true,
+    "accessibility": true,
+    "drones": true,
+    "edgeNode": true,
+    "partnerApi": true,
+    "volunteers": true
+  },
   "sosCluster": {
     "minSignals": 4,
     "windowMs": 300000,
@@ -23,7 +33,13 @@
     }
   },
   "triage": {
-    "severity": { "medical": 4, "fire": 3, "collapse": 2, "flood": 1, "general": 2 },
+    "severity": {
+      "medical": 4,
+      "fire": 3,
+      "collapse": 2,
+      "flood": 1,
+      "general": 2
+    },
     "weights": {
       "severity": 10,
       "headcount": 3,
@@ -35,8 +51,16 @@
     "autoAssignMinScore": 40
   },
   "routing": {
-    "providers": ["external", "graph", "straight"],
-    "weights": { "distance": 1, "occupancy": 4, "roadStatus": 2 },
+    "providers": [
+      "external",
+      "graph",
+      "straight"
+    ],
+    "weights": {
+      "distance": 1,
+      "occupancy": 4,
+      "roadStatus": 2
+    },
     "walkingSpeedKmh": 5,
     "candidateShelters": 6,
     "congestionPenalty": 2,
@@ -55,12 +79,38 @@
     "bufferSize": 5000
   },
   "rateLimits": {
-    "default": { "windowMs": 60000, "ip": 1200 },
-    "auth.login": { "windowMs": 900000, "ip": 30 },
-    "sos.create": { "windowMs": 60000, "ip": 600, "device": 20 },
-    "citizen.write": { "windowMs": 60000, "ip": 600, "device": 60 },
-    "citizen.read": { "windowMs": 60000, "ip": 1200, "device": 120 },
-    "operator": { "windowMs": 60000, "user": 900 },
-    "events.poll": { "windowMs": 60000, "ip": 1200, "device": 120, "user": 120 }
+    "default": {
+      "windowMs": 60000,
+      "ip": 1200
+    },
+    "auth.login": {
+      "windowMs": 900000,
+      "ip": 30
+    },
+    "sos.create": {
+      "windowMs": 60000,
+      "ip": 600,
+      "device": 20
+    },
+    "citizen.write": {
+      "windowMs": 60000,
+      "ip": 600,
+      "device": 60
+    },
+    "citizen.read": {
+      "windowMs": 60000,
+      "ip": 1200,
+      "device": 120
+    },
+    "operator": {
+      "windowMs": 60000,
+      "user": 900
+    },
+    "events.poll": {
+      "windowMs": 60000,
+      "ip": 1200,
+      "device": 120,
+      "user": 120
+    }
   }
 }

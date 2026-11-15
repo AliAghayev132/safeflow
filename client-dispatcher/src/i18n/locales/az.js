@@ -29,6 +29,7 @@ const az = {
   },
   nav: {
     sectionOperations: 'Əməliyyatlar',
+    sectionResources: 'Resurslar',
     sectionAdmin: 'İdarəetmə',
     operations: 'Əməliyyat paneli',
     triage: 'Triage növbəsi',

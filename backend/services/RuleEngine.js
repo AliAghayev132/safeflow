@@ -51,6 +51,8 @@ class RuleEngine {
 
   async #run(rule, event, payload) {
     if (rule.enabled === false) return;
+    // Rules owned by a feature module only run while the feature is on
+    if (rule.feature && !ConfigService.isEnabled(rule.feature)) return;
     const stat = this.stats.get(rule.id);
     try {
       await rule.handle({ event, payload, config: ConfigService.get(), rule });
