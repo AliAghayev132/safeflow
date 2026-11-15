@@ -12,6 +12,7 @@ import { ChevronDown, ChevronRight, Filter, X, RefreshCw } from 'lucide-react'
 
 // Components
 import { Card, Table, Button, Input, Icon3D, EmptyState, PageLoader, Badge } from '@components'
+import { formatDateTime } from '@utils'
 
 const EMPTY = { action: '', actor: '', from: '', to: '' }
 const PAGE = 100
@@ -105,7 +106,9 @@ export const AuditPage = () => {
                     <Table.Td className="text-muted">
                       {open === e.id ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
                     </Table.Td>
-                    <Table.Td className="font-mono text-xs whitespace-nowrap">{e.at}</Table.Td>
+                    <Table.Td className="text-xs whitespace-nowrap tabular-nums" title={e.at}>
+                      {formatDateTime(e.at)}
+                    </Table.Td>
                     <Table.Td>
                       <span className="flex items-center gap-2 whitespace-nowrap">
                         <span className="font-medium">{e.actor.username}</span>

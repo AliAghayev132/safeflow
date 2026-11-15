@@ -16,8 +16,9 @@ export const routes = [
   },
   {
     key: 'partners',
+    order: 30,
     path: 'partners',
-    icon: 'lock',
+    icon: 'shield',
     section: 'Admin',
     permission: 'partners:manage',
     feature: 'partnerApi',

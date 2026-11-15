@@ -16,6 +16,7 @@ const page = (loader, name) => lazy(() => loader().then((m) => ({ default: m[nam
  *   permission → string or array (any-of)
  *   section    → menu group (`nav.section<Section>`)
  *   badge      → live counter shown in the menu ('alerts' | 'queue')
+ *   order      → optional position inside its section (lower first)
  */
 export const ROUTES = [
   {
@@ -78,6 +79,7 @@ export const ROUTES = [
   },
   {
     key: 'config',
+    order: 10,
     path: 'admin/config',
     icon: 'gear',
     section: 'Admin',
@@ -86,6 +88,7 @@ export const ROUTES = [
   },
   {
     key: 'audit',
+    order: 40,
     path: 'admin/audit',
     icon: 'pager',
     section: 'Admin',
@@ -94,6 +97,7 @@ export const ROUTES = [
   },
   {
     key: 'roles',
+    order: 20,
     path: 'admin/roles',
     icon: 'lock',
     section: 'Admin',
@@ -102,6 +106,7 @@ export const ROUTES = [
   },
   {
     key: 'system',
+    order: 50,
     path: 'admin/system',
     icon: 'antenna',
     section: 'Admin',
@@ -117,7 +122,11 @@ export const ROUTES = [
  */
 const moduleFiles = import.meta.glob('./modules/*.js', { eager: true })
 const MODULE_ROUTES = Object.values(moduleFiles).flatMap((m) => m.routes ?? [])
+// Stable sort: entries with `order` are placed by it, others keep file order
 export const ALL_ROUTES = [...ROUTES, ...MODULE_ROUTES]
+  .map((r, i) => ({ r, i }))
+  .sort((a, b) => (a.r.order ?? 1000 + a.i) - (b.r.order ?? 1000 + b.i))
+  .map(({ r }) => r)
 
 export const SECTIONS = ['Operations', 'Resources', 'Admin']
 
