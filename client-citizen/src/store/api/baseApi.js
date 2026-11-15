@@ -4,7 +4,10 @@ import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react'
 import { cacheKeyFor, saveCached, readCached } from '@utils/offlineCache'
 import { serverOk, serverUnreachable } from '../slices/networkSlice'
 
-export const API_ORIGIN = (import.meta.env.VITE_API_URL || 'http://localhost:5000').replace(/\/$/, '')
+// VITE_API_URL=same-origin → the API is the server that served the app
+// (edge node at an assembly point: app + API on the same local host).
+const RAW_ORIGIN = import.meta.env.VITE_API_URL || 'http://localhost:5000'
+export const API_ORIGIN = (RAW_ORIGIN === 'same-origin' ? window.location.origin : RAW_ORIGIN).replace(/\/$/, '')
 
 // ============ BASE QUERY ============
 // Citizen endpoints are public (device-id based) — no auth header needed.

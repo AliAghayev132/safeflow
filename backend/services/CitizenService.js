@@ -57,8 +57,9 @@ class CitizenService {
     };
   }
 
-  static async setStatus({ deviceId, status, origin }) {
-    const set = { status, lastSeenAt: new Date() };
+  static async setStatus({ deviceId, status, origin, at }) {
+    // `at` = when the citizen set it (edge-node sync); defaults to now
+    const set = { status, lastSeenAt: new Date(), statusAt: at ? new Date(at) : new Date() };
     if (origin) {
       set.location = toPoint(origin.lat, origin.lng);
       set.zone = (await ZoneService.resolve(origin))?._id ?? null;
