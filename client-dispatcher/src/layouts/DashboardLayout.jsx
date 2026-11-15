@@ -22,6 +22,7 @@ import {
   Icon3D,
   PageLoader,
   Toaster,
+  ModuleOverlays,
   AlertBanner,
   Button,
   EmptyState,
@@ -214,6 +215,7 @@ export const DashboardLayout = () => {
       </div>
 
       <Toaster />
+      <ModuleOverlays />
     </div>
   )
 }

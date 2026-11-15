@@ -34,10 +34,32 @@ class SupplyService {
     const cfg = ConfigService.get("drones");
     const people = shelter.occupancy;
     const items = estimateNeeds(people, cfg.ratios);
+
+    // What is already requested / on the way for this point (not delivered yet)
+    const open = await SupplyRequest.find({ shelter: shelter._id, status: { $in: ["pending", "in_progress"] } }, { items: 1 }).lean();
+    const outstanding = {};
+    for (const r of open) for (const i of r.items) outstanding[i.kind] = (outstanding[i.kind] ?? 0) + i.quantity;
+    const needs = items.map((i) => ({
+      ...i,
+      outstanding: outstanding[i.kind] ?? 0,
+      missing: Math.max(0, i.quantity - (outstanding[i.kind] ?? 0)),
+      unitWeightKg: cfg.unitWeightKg[i.kind] ?? 1,
+    }));
+
     return {
-      shelter: { id: shelter._id.toString(), name: shelter.name, code: shelter.code, occupancy: people, capacity: shelter.capacity },
+      shelter: {
+        id: shelter._id.toString(),
+        name: shelter.name,
+        code: shelter.code,
+        occupancy: people,
+        capacity: shelter.capacity,
+        medicalPoint: Boolean(shelter.medicalPoint),
+      },
       people,
       items,
+      // Per-kind need vs. already requested — drives the "what does this point need" view
+      needs,
+      openRequests: open.length,
       totalKg: itemsWeightKg(items, cfg.unitWeightKg),
       text: items.length ? describeNeeds(people, items) : "",
       i18n: { key: "drones.estimate", params: { people } },

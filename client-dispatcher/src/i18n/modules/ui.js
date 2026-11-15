@@ -8,6 +8,7 @@ export default {
       confirm: 'Təsdiqlə',
       cancel: 'Ləğv et',
       confirmTitle: 'Əminsiniz?',
+      close: 'Bağla',
     },
   },
   en: {
@@ -18,6 +19,7 @@ export default {
       confirm: 'Confirm',
       cancel: 'Cancel',
       confirmTitle: 'Are you sure?',
+      close: 'Close',
     },
   },
   ru: {
@@ -28,6 +30,7 @@ export default {
       confirm: 'Подтвердить',
       cancel: 'Отмена',
       confirmTitle: 'Вы уверены?',
+      close: 'Закрыть',
     },
   },
 }

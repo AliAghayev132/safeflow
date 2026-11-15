@@ -33,6 +33,7 @@ import { zoneLoadColor, occupancyColor, formatPercent, formatNumber, shelterLeve
 import { useThresholds } from '@hooks'
 import { ProgressBar } from '../ui/ProgressBar'
 import { StatusBadge } from '../ui/StatusBadge'
+import { ShelterActions } from '../slots/ModuleSlots'
 import { DensityLayer } from './DensityLayer'
 import { SosClusterLayer } from './SosClusterLayer'
 import { shelterIcon, brigadeIcon, alertPulseIcon, pickedPointIcon } from './markers'
@@ -190,6 +191,10 @@ const ShelterMarker = memo(function ShelterMarker({ s, thresholds, reserveLabel 
               {t('map.reserveClosed')}
             </p>
           )}
+          {/* Module actions for this point (e.g. request drone supplies) */}
+          <div className="mt-3 flex flex-col gap-1.5 empty:hidden">
+            <ShelterActions shelter={s} />
+          </div>
         </div>
       </Popup>
     </Marker>

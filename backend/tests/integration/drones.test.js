@@ -76,6 +76,18 @@ describe("Drones — need estimation", () => {
     assert.match(estimate.text, /nəfərə/);
   });
 
+  test("needs subtract what is already requested for the point", async () => {
+    const before = (await api("GET", "/drones/estimate", { token: manager.accessToken })).data.estimate;
+    const water = before.needs.find((n) => n.kind === "water");
+    assert.equal(water.missing, water.quantity - water.outstanding);
+
+    await api("POST", "/drones/requests", { token: manager.accessToken, body: { items: [{ kind: "water", quantity: 7 }] } });
+    const after = (await api("GET", "/drones/estimate", { token: manager.accessToken })).data.estimate;
+    const water2 = after.needs.find((n) => n.kind === "water");
+    assert.equal(water2.outstanding, water.outstanding + 7);
+    assert.equal(after.openRequests, before.openRequests + 1);
+  });
+
   test("invalid items are rejected", async () => {
     const r = await api("POST", "/drones/requests", {
       token: dispatcher.accessToken,

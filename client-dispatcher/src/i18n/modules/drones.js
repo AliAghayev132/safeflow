@@ -1,6 +1,23 @@
 /** Translations of the drone supply module (deep-merged into the base locales). */
 export default {
   az: {
+    supplyDialog: {
+      open: 'Dron tələbi',
+      title: '{{name}} — dron təchizatı',
+      people: '{{people}} / {{capacity}} nəfər',
+      openRequests: '{{count}} açıq sorğu',
+      needsTitle: 'Məntəqənin ehtiyacları — göndəriləcəkləri seçin',
+      need: 'Gündəlik ehtiyac: {{qty}} {{unit}}',
+      onTheWay: 'Artıq sorğulanıb / yolda: {{qty}}',
+      covered: 'Təmin olunub',
+      fillMissing: 'Çatışmayan',
+      less: 'Azalt',
+      more: 'Artır',
+      load: 'Ümumi yük',
+      send_one: 'Dron tələbi göndər ({{count}} növ)',
+      send_other: 'Dron tələbi göndər ({{count}} növ)',
+      empty: 'Məntəqə boşdur — ehtiyac hesablanmadı. Növləri sonra əlavə edə bilərsiniz.',
+    },
     nav: { drones: 'Dronlar', supplies: 'Təchizat sorğuları', myShelter: 'Məntəqəm' },
     role: { shelter_manager: 'Məntəqə məsulu' },
     drones: {
@@ -65,6 +82,23 @@ export default {
     },
   },
   en: {
+    supplyDialog: {
+      open: 'Request drone',
+      title: '{{name}} — drone supplies',
+      people: '{{people}} / {{capacity}} people',
+      openRequests: '{{count}} open requests',
+      needsTitle: 'What this point needs — pick what to send',
+      need: 'Daily need: {{qty}} {{unit}}',
+      onTheWay: 'Already requested / on the way: {{qty}}',
+      covered: 'Covered',
+      fillMissing: 'Missing',
+      less: 'Decrease',
+      more: 'Increase',
+      load: 'Total load',
+      send_one: 'Send drone request ({{count}} item)',
+      send_other: 'Send drone request ({{count}} items)',
+      empty: 'The point is empty — no needs estimated yet.',
+    },
     nav: { drones: 'Drones', supplies: 'Supply requests', myShelter: 'My shelter' },
     role: { shelter_manager: 'Shelter manager' },
     drones: {
@@ -129,6 +163,25 @@ export default {
     },
   },
   ru: {
+    supplyDialog: {
+      open: 'Запросить дрон',
+      title: '{{name}} — доставка дроном',
+      people: '{{people}} / {{capacity}} чел.',
+      openRequests: 'Открытых запросов: {{count}}',
+      needsTitle: 'Потребности пункта — выберите, что отправить',
+      need: 'Суточная потребность: {{qty}} {{unit}}',
+      onTheWay: 'Уже запрошено / в пути: {{qty}}',
+      covered: 'Обеспечено',
+      fillMissing: 'Недостача',
+      less: 'Меньше',
+      more: 'Больше',
+      load: 'Общий груз',
+      send_one: 'Отправить запрос ({{count}} позиция)',
+      send_few: 'Отправить запрос ({{count}} позиции)',
+      send_many: 'Отправить запрос ({{count}} позиций)',
+      send_other: 'Отправить запрос ({{count}} позиции)',
+      empty: 'Пункт пуст — потребности не рассчитаны.',
+    },
     nav: { drones: 'Дроны', supplies: 'Заявки на снабжение', myShelter: 'Мой пункт' },
     role: { shelter_manager: 'Ответственный за пункт' },
     drones: {

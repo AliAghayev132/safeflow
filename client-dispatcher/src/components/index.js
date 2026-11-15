@@ -10,3 +10,6 @@ export * from './alerts'
 export * from './triage'
 export * from './brigades'
 export * from './simulation'
+
+// Module UI slots (shelter actions, overlays)
+export * from './slots/ModuleSlots'
