@@ -9,6 +9,7 @@ SimulationRouter.use(authenticate, ...rateLimitFor("operator"), authorize("simul
 SimulationRouter.post("/roads/random-close", s.closeRandomRoad);
 SimulationRouter.post("/roads/:edgeId/close", s.closeRoad);
 SimulationRouter.post("/roads/:edgeId/open", s.openRoad);
+SimulationRouter.post("/roads/:edgeId/barrier", s.setRoadBarrier);
 SimulationRouter.post("/traffic", s.randomTraffic);
 SimulationRouter.post("/shelters/:id/occupancy", s.setShelterOccupancy);
 SimulationRouter.post("/sos-wave", s.sosWave);

@@ -36,6 +36,16 @@ const sosSignalSchema = new Schema(
       disabled: { type: Boolean, default: false },
     },
     injuries: { type: String, default: "", maxlength: 280 },
+    // Special needs of the reporting citizen (profile snapshot + SOS body)
+    accessibility: {
+      limitedMobility: { type: Boolean, default: false },
+      wheelchair: { type: Boolean, default: false },
+      speechImpaired: { type: Boolean, default: false },
+      hearingImpaired: { type: Boolean, default: false },
+      visionImpaired: { type: Boolean, default: false },
+    },
+    // Limited mobility / wheelchair → always top of the dispatcher queue
+    priorityOne: { type: Boolean, default: false, index: true },
 
     // Triage
     priority: { type: Number, default: 0, index: true },
@@ -87,6 +97,14 @@ sosSignalSchema.methods.toPublic = function () {
       disabled: this.vulnerable?.disabled ?? false,
     },
     injuries: this.injuries,
+    accessibility: {
+      limitedMobility: Boolean(this.accessibility?.limitedMobility),
+      wheelchair: Boolean(this.accessibility?.wheelchair),
+      speechImpaired: Boolean(this.accessibility?.speechImpaired),
+      hearingImpaired: Boolean(this.accessibility?.hearingImpaired),
+      visionImpaired: Boolean(this.accessibility?.visionImpaired),
+    },
+    priorityOne: Boolean(this.priorityOne),
     priority: this.priority,
     priorityBreakdown: this.priorityBreakdown,
     recommendedBrigade: id(this.recommendedBrigade),

@@ -45,7 +45,9 @@
       "headcount": 3,
       "vulnerable": 8,
       "injuries": 6,
-      "needs": 2
+      "needs": 2,
+      "priorityOne": 1000,
+      "accessibility": 8
     },
     "headcountCap": 20,
     "autoAssignMinScore": 40
@@ -59,7 +61,9 @@
     "weights": {
       "distance": 1,
       "occupancy": 4,
-      "roadStatus": 2
+      "roadStatus": 2,
+      "pending": 3,
+      "needs": 2
     },
     "walkingSpeedKmh": 5,
     "candidateShelters": 6,
@@ -68,12 +72,15 @@
       "timeoutMs": 1500,
       "failureThreshold": 3,
       "resetTimeoutMs": 30000
-    }
+    },
+    "pendingWindowMs": 3600000
   },
   "brigade": {
     "speedKmh": 40,
     "tickMs": 2000,
-    "arrivalMeters": 30
+    "arrivalMeters": 30,
+    "onSceneMinutes": 20,
+    "suggestionAlternatives": 3
   },
   "events": {
     "bufferSize": 5000

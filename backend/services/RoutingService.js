@@ -46,6 +46,10 @@ class RoutingService {
       lengthMeters: e.lengthMeters,
       status: e.status,
       congestion: e.congestion ?? 0,
+      stairs: Boolean(e.stairs),
+      steepSlope: Boolean(e.steepSlope),
+      obstacle: Boolean(e.obstacle),
+      damaged: Boolean(e.damaged),
     };
     this.edges.set(edge.edgeId, edge);
     this.adjacency.get(edge.from)?.push(edge);
@@ -80,8 +84,23 @@ class RoutingService {
     return best ? { node: best, distance: bestDistance } : null;
   }
 
-  /** Dijkstra between two nodes. Returns null when unreachable. */
-  shortestPath(fromId, toId) {
+  /** Barrier that makes a segment unusable for wheelchairs / stretchers. */
+  static barrierOf(edge, blocked) {
+    if (edge.stairs) return "stairs";
+    if (edge.steepSlope) return "steepSlope";
+    if (edge.obstacle) return "obstacle";
+    if (edge.damaged) return "damaged";
+    if (blocked?.has(edge.edgeId)) return "damageZone";
+    return null;
+  }
+
+  /**
+   * Dijkstra between two nodes. Returns null when unreachable.
+   * opts.accessible → barrier-free: skip stairs, steep slopes, obstacles,
+   * damaged segments and segments inside structural-damage zones (opts.blocked).
+   */
+  shortestPath(fromId, toId, opts = {}) {
+    const avoided = new Map(); // edgeId → barrier kind
     if (!this.nodes.has(fromId) || !this.nodes.has(toId)) return null;
 
     const dist = new Map([[fromId, 0]]);
@@ -98,6 +117,13 @@ class RoutingService {
 
       for (const edge of this.adjacency.get(u) ?? []) {
         if (edge.status === "closed") continue;
+        if (opts.accessible) {
+          const barrier = RoutingService.barrierOf(edge, opts.blocked);
+          if (barrier) {
+            avoided.set(edge.edgeId, barrier);
+            continue;
+          }
+        }
         const v = edge.from === u ? edge.to : edge.from;
         if (visited.has(v)) continue;
         const nd = d + this.#weight(edge);
@@ -125,19 +151,21 @@ class RoutingService {
       current = step.node;
     }
 
-    return { nodeIds, edgeIds, lengthMeters, congestedMeters, cost: dist.get(toId) };
+    const avoidedCounts = {};
+    for (const kind of avoided.values()) avoidedCounts[kind] = (avoidedCounts[kind] ?? 0) + 1;
+    return { nodeIds, edgeIds, lengthMeters, congestedMeters, cost: dist.get(toId), avoided: avoidedCounts };
   }
 
   /**
    * Route from an arbitrary point (snapped to the nearest intersection) to a
    * target node. Duration is a walking estimate inflated by congestion.
    */
-  routeFrom(origin, targetNodeId) {
+  routeFrom(origin, targetNodeId, opts = {}) {
     if (!this.nodes.size) return null;
     const snap = this.nearestNode(origin);
     if (!snap) return null;
 
-    const result = this.shortestPath(snap.node.id, targetNodeId);
+    const result = this.shortestPath(snap.node.id, targetNodeId, opts);
     if (!result) return null;
 
     const { walkingSpeedKmh } = ConfigService.get("routing");
@@ -159,6 +187,8 @@ class RoutingService {
       durationSec: Math.round((distanceMeters + congestionExtra) / speed),
       // congestion-weighted km on the route → road_status_penalty
       roadPenalty: Math.round((result.congestedMeters / 1000) * 1000) / 1000,
+      accessible: Boolean(opts.accessible),
+      barriersAvoided: opts.accessible ? result.avoided : undefined,
     };
   }
 

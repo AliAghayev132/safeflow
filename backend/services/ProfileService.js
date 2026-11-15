@@ -1,4 +1,7 @@
 import { CitizenProfile } from "#models";
+import { accessibilityFlags } from "#constants";
+
+const NO_NEEDS = Object.fromEntries(accessibilityFlags.map((f) => [f, false]));
 
 const strList = (v, max = 20) =>
   Array.isArray(v)
@@ -13,6 +16,23 @@ class ProfileService {
   static async get(deviceId) {
     const p = await CitizenProfile.findOne({ deviceId });
     return p?.toPublic() ?? null;
+  }
+
+  /**
+   * Special-needs flags + whether the profile suggests medical needs
+   * (chronic conditions / medications). Lean, projection-only query — used
+   * on the SOS and evacuation hot paths.
+   */
+  static async needs(deviceId) {
+    if (!deviceId) return { accessibility: { ...NO_NEEDS }, medical: false };
+    const p = await CitizenProfile.findOne(
+      { deviceId },
+      { accessibility: 1, conditions: 1, medications: 1 },
+    ).lean();
+    return {
+      accessibility: { ...NO_NEEDS, ...(p?.accessibility ?? {}) },
+      medical: Boolean(p?.conditions?.length || p?.medications?.length),
+    };
   }
 
   static async upsert(deviceId, body = {}) {
@@ -34,6 +54,11 @@ class ProfileService {
       }));
     }
     if (["az", "en", "ru"].includes(body.language)) set.language = body.language;
+    if (body.accessibility && typeof body.accessibility === "object") {
+      for (const flag of accessibilityFlags) {
+        if (flag in body.accessibility) set[`accessibility.${flag}`] = Boolean(body.accessibility[flag]);
+      }
+    }
 
     const p = await CitizenProfile.findOneAndUpdate(
       { deviceId },

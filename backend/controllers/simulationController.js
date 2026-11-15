@@ -1,5 +1,5 @@
 import { sosTypes } from "#constants";
-import { SimulationService, ScenarioService, ShelterService, AuditService } from "#services";
+import { SimulationService, ScenarioService, ShelterService, AuditService, RoadService } from "#services";
 import { asyncHandler, ok, requireCoords, requireEnum } from "#utils";
 
 const audited = (action, fn, target = () => ({})) =>
@@ -21,6 +21,21 @@ const closeRoad = audited(
 const openRoad = audited(
   "road_open",
   async (req) => ({ data: { edges: await SimulationService.openRoad(req.params.edgeId) }, code: "ROAD_OPENED" }),
+  (req) => ({ type: "road", id: req.params.edgeId }),
+);
+
+/** POST /api/simulation/roads/:edgeId/barrier { kind: obstacle|damaged|stairs|steepSlope, value } */
+const setRoadBarrier = audited(
+  "road_barrier",
+  async (req) => {
+    const kind = String(req.body?.kind ?? "obstacle");
+    const value = req.body?.value !== false;
+    return {
+      data: { edges: await RoadService.setBarrier(req.params.edgeId, kind, value) },
+      details: { kind, value },
+      code: "ROAD_BARRIER_UPDATED",
+    };
+  },
   (req) => ({ type: "road", id: req.params.edgeId }),
 );
 
@@ -84,6 +99,7 @@ export {
   closeRoad,
   openRoad,
   closeRandomRoad,
+  setRoadBarrier,
   randomTraffic,
   setShelterOccupancy,
   sosWave,

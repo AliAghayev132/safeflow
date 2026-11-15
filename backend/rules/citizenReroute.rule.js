@@ -27,6 +27,9 @@ const citizenRerouteRule = {
     if (event === domainEvents.ROAD_UPDATED) {
       for (const edge of payload.edges) {
         if (edge.status === "closed") await ReroutingService.forClosedEdge(edge);
+        else if (edge.obstacle || edge.damaged || edge.stairs || edge.steepSlope) {
+          await ReroutingService.forBarrierEdge(edge);
+        }
       }
       return;
     }

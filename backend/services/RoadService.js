@@ -31,6 +31,10 @@ class RoadService {
       routingService.updateEdge(edge.edgeId, {
         status: edge.status,
         congestion: edge.congestion,
+        stairs: edge.stairs,
+        steepSlope: edge.steepSlope,
+        obstacle: edge.obstacle,
+        damaged: edge.damaged,
       });
     }
 
@@ -52,6 +56,19 @@ class RoadService {
       edge.status = "open";
       edge.closedReason = "";
       edge.closedAt = null;
+    });
+  }
+
+  /**
+   * Accessibility barrier on a segment (obstacle / damaged / stairs /
+   * steepSlope). Barrier-free routes avoid it; regular routes are unaffected.
+   */
+  static setBarrier(edgeId, kind, value = true) {
+    if (!["obstacle", "damaged", "stairs", "steepSlope"].includes(kind)) {
+      throw AppError.badRequest("Naməlum maneə növü", "BARRIER_KIND");
+    }
+    return RoadService.#update([edgeId], (edge) => {
+      edge[kind] = Boolean(value);
     });
   }
 

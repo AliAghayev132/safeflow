@@ -2,6 +2,7 @@ import { config } from "#config";
 import { CircuitBreaker, haversineMeters } from "#utils";
 import { ConfigService } from "./ConfigService.js";
 import { routingService } from "./RoutingService.js";
+import { HazardService } from "./HazardService.js";
 
 const toRad = (d) => (d * Math.PI) / 180;
 const toDeg = (r) => (r * 180) / Math.PI;
@@ -23,7 +24,8 @@ const externalBreaker = new CircuitBreaker({ name: "routing.external" });
 /** 1. External OSRM-compatible API (short timeout + circuit breaker). */
 const externalProvider = {
   name: "external",
-  enabled: () => Boolean(config.routing.externalUrl),
+  // No barrier data from a generic routing API → never used for barrier-free routes
+  enabled: (opts) => Boolean(config.routing.externalUrl) && !opts?.accessible,
   async route(origin, target) {
     const { timeoutMs, failureThreshold, resetTimeoutMs } = ConfigService.get("routing").external;
     externalBreaker.configure({ failureThreshold, resetTimeoutMs });
@@ -52,9 +54,12 @@ const externalProvider = {
 const graphProvider = {
   name: "graph",
   enabled: () => routingService.nodes.size > 0,
-  async route(origin, target) {
+  async route(origin, target, opts = {}) {
     if (!target.nodeId) throw new Error("graph: target has no node");
-    const r = routingService.routeFrom(origin, target.nodeId);
+    const r = routingService.routeFrom(origin, target.nodeId, {
+      accessible: Boolean(opts.accessible),
+      blocked: opts.accessible ? HazardService.blockedEdges() : undefined,
+    });
     if (!r) throw new Error("graph: unreachable");
     return r;
   },
@@ -96,19 +101,25 @@ const PROVIDERS = { external: externalProvider, graph: graphProvider, straight: 
  * be told "approximate route".
  */
 class RouteService {
-  static async route(origin, target) {
+  /**
+   * @param {object} [opts]
+   * @param {boolean} [opts.accessible] barrier-free route (wheelchair / stretcher)
+   */
+  static async route(origin, target, opts = {}) {
     const order = ConfigService.get("routing").providers ?? ["external", "graph", "straight"];
     const attempts = [];
 
     for (const name of order) {
       const provider = PROVIDERS[name];
-      if (!provider || !provider.enabled()) continue;
+      if (!provider || !provider.enabled(opts)) continue;
       try {
-        const result = await provider.route(origin, target);
+        const result = await provider.route(origin, target, opts);
         return {
           ...result,
           provider: name,
           approximate: name === "straight",
+          // A straight line says nothing about stairs / debris on the way
+          accessibleUnverified: Boolean(opts.accessible) && name !== "graph",
           fallback: attempts.length > 0,
           attempts,
         };
@@ -119,7 +130,14 @@ class RouteService {
 
     // The configured chain may exclude "straight" — still never fail.
     const result = await straightProvider.route(origin, target);
-    return { ...result, provider: "straight", approximate: true, fallback: true, attempts };
+    return {
+      ...result,
+      provider: "straight",
+      approximate: true,
+      fallback: true,
+      accessibleUnverified: Boolean(opts.accessible),
+      attempts,
+    };
   }
 
   static status() {

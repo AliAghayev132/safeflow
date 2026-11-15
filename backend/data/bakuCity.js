@@ -74,6 +74,10 @@ const SHELTERS = [
   { code: "RS-05", name: "Ehtiyat Məntəqə — Universitet Kampusu", type: "park", at: [4, 5], capacity: 2500, rate: 0, reserve: true, address: "Tbilisi pr. 90" },
 ];
 
+// Shelter accessibility (simulated survey)
+const NO_STEP_FREE = ["SH-04", "SH-05", "SH-09"];
+const MEDICAL_POINTS = ["SH-01", "SH-03", "SH-08", "SH-10", "RS-01"];
+
 const BRIGADES = [
   { code: "YSD-01", name: "Yanğınsöndürmə dəstəsi №1", type: "fire", at: [1, 3], members: 6 },
   { code: "YSD-02", name: "Yanğınsöndürmə dəstəsi №2", type: "fire", at: [5, 7], members: 6 },
@@ -123,7 +127,11 @@ const buildCityData = () => {
 
   // ----- Edges (grid, undirected) -----
   const edges = [];
+  let edgeSeq = 0;
   const addEdge = (a, b, name) => {
+    // Deterministic accessibility barriers (simulated survey data):
+    // ~11% of segments have stairs / underpasses, ~7% a steep slope.
+    const k = (edgeSeq++ * 37 + 11) % 100;
     edges.push({
       edgeId: `E-${a}_${b}`,
       from: a,
@@ -132,6 +140,8 @@ const buildCityData = () => {
       lengthMeters: Math.round(distanceMeters(nodeIndex.get(a), nodeIndex.get(b))),
       status: "open",
       congestion: 0,
+      stairs: k < 11,
+      steepSlope: k >= 11 && k < 18,
     });
   };
   for (let r = 0; r < ROWS; r++) {
@@ -195,6 +205,9 @@ const buildCityData = () => {
       occupancy: Math.round(s.capacity * s.rate),
       isActive: !s.reserve,
       isReserve: Boolean(s.reserve),
+      // Underground civil-defence shelters have stairs-only entrances
+      accessible: !NO_STEP_FREE.includes(s.code),
+      medicalPoint: MEDICAL_POINTS.includes(s.code),
     };
   });
 

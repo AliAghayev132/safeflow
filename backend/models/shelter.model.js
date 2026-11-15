@@ -19,6 +19,9 @@ const shelterSchema = new Schema(
     occupancy: { type: Number, default: 0, min: 0 },
     isActive: { type: Boolean, default: true },
     isReserve: { type: Boolean, default: false },
+    // Step-free / wheelchair entrance and an on-site medical point
+    accessible: { type: Boolean, default: true },
+    medicalPoint: { type: Boolean, default: false },
     openedAt: { type: Date, default: null },
   },
   {
@@ -52,6 +55,8 @@ shelterSchema.methods.toPublic = function () {
     occupancyRate: Number(this.occupancyRate.toFixed(4)),
     isActive: this.isActive,
     isReserve: this.isReserve,
+    accessible: this.accessible,
+    medicalPoint: this.medicalPoint,
     openedAt: this.openedAt,
   };
 };

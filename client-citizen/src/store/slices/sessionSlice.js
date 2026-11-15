@@ -7,16 +7,21 @@ const loadPersisted = () => {
   try {
     const raw = storage.get(STORAGE_KEY)
     if (!raw) return {}
-    const { origin, originSource, zoneCode } = JSON.parse(raw)
-    return { origin: origin ?? null, originSource: originSource ?? null, zoneCode: zoneCode ?? null }
+    const { origin, originSource, zoneCode, accessibleRoute } = JSON.parse(raw)
+    return {
+      origin: origin ?? null,
+      originSource: originSource ?? null,
+      zoneCode: zoneCode ?? null,
+      accessibleRoute: Boolean(accessibleRoute),
+    }
   } catch {
     return {}
   }
 }
 
 let lastPersisted = ''
-export const persistSession = ({ origin, originSource, zoneCode }) => {
-  const next = JSON.stringify({ origin, originSource, zoneCode })
+export const persistSession = ({ origin, originSource, zoneCode, accessibleRoute }) => {
+  const next = JSON.stringify({ origin, originSource, zoneCode, accessibleRoute })
   if (next === lastPersisted) return
   lastPersisted = next
   storage.set(STORAGE_KEY, next)
@@ -54,6 +59,10 @@ const sessionSlice = createSlice({
       state.originSource = null
       state.zoneCode = null
     },
+    /** Barrier-free route (wheelchair / stretcher) for this device. */
+    setAccessibleRoute: (state, { payload }) => {
+      state.accessibleRoute = Boolean(payload)
+    },
     showRerouteNotice: (state, { payload }) => {
       state.rerouteNotice = payload
     },
@@ -63,7 +72,7 @@ const sessionSlice = createSlice({
   },
 })
 
-export const { setOrigin, setZone, clearLocation, showRerouteNotice, dismissRerouteNotice } =
+export const { setOrigin, setZone, clearLocation, setAccessibleRoute, showRerouteNotice, dismissRerouteNotice } =
   sessionSlice.actions
 
 // ============ SELECTORS ============
@@ -75,10 +84,11 @@ export const selectDeviceId = (state) => state.session.deviceId
  * object; the same args are used by socket handlers to patch the cache.
  */
 export const selectPlanArgs = createSelector(
-  [(s) => s.session.origin, (s) => s.session.zoneCode, (s) => s.session.deviceId],
-  (origin, zoneCode, deviceId) => {
-    if (origin) return { lat: origin.lat, lng: origin.lng, deviceId }
-    if (zoneCode) return { zone: zoneCode, deviceId }
+  [(s) => s.session.origin, (s) => s.session.zoneCode, (s) => s.session.deviceId, (s) => s.session.accessibleRoute],
+  (origin, zoneCode, deviceId, accessibleRoute) => {
+    const mode = accessibleRoute ? { mode: 'accessible' } : {}
+    if (origin) return { lat: origin.lat, lng: origin.lng, deviceId, ...mode }
+    if (zoneCode) return { zone: zoneCode, deviceId, ...mode }
     return null
   }
 )

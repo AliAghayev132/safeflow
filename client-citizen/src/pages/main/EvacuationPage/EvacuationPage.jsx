@@ -11,6 +11,8 @@ import {
   RecommendedCard,
   ShelterOption,
   RouteNotice,
+  AccessibleRoutePanel,
+  PlanExplanation,
   EmptyState,
   Spinner,
 } from '@components'
@@ -49,6 +51,7 @@ export const EvacuationPage = () => {
       <section className="space-y-3 lg:col-start-2 lg:row-start-1">
         <RerouteBanner />
         <LocationBar />
+        {planArgs && <AccessibleRoutePanel plan={plan} />}
 
         {!planArgs && (
           <div className="rounded-2xl border border-line bg-surface">
@@ -73,6 +76,7 @@ export const EvacuationPage = () => {
         )}
 
         {recommended && <RouteNotice route={recommended.route} routing={plan?.routing} />}
+        {recommended && <PlanExplanation explanation={plan?.explanation} />}
         {recommended && <RecommendedCard recommended={recommended} />}
       </section>
 
@@ -92,7 +96,13 @@ export const EvacuationPage = () => {
           <>
             <h3 className="mt-1 text-sm font-bold text-ink">{t('evacuation.others')}</h3>
             {others.map((o) => (
-              <ShelterOption key={o.shelter.id} shelter={o.shelter} distanceMeters={o.distanceMeters} durationSec={o.durationSec} />
+              <ShelterOption
+                key={o.shelter.id}
+                shelter={o.shelter}
+                distanceMeters={o.distanceMeters}
+                durationSec={o.durationSec}
+                unsuitable={o.unsuitable}
+              />
             ))}
           </>
         )}

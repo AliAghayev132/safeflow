@@ -5,6 +5,7 @@ import { eventBus } from "./EventBus.js";
 import { ZoneService } from "./ZoneService.js";
 import { ShelterService } from "./ShelterService.js";
 import { SosService } from "./SosService.js";
+import { ProfileService } from "./ProfileService.js";
 
 /**
  * Citizen sessions: evacuation planning, status updates, shelter check-in.
@@ -14,11 +15,17 @@ class CitizenService {
    * Weighted shelter options + recommended route. When a deviceId is given,
    * the plan is stored so the rerouting engine can track the citizen.
    */
-  static async planEvacuation({ deviceId, origin }) {
-    const [zone, plan] = await Promise.all([
-      ZoneService.resolve(origin),
-      ShelterService.findNearest(origin),
-    ]);
+  static async planEvacuation({ deviceId, origin, mode }) {
+    // Special needs from the optional profile; ?mode=accessible forces a
+    // barrier-free route (e.g. someone helping a wheelchair user).
+    const profileNeeds = await ProfileService.needs(deviceId);
+    const a = profileNeeds.accessibility;
+    const needs = {
+      accessible: mode === "accessible" || a.limitedMobility || a.wheelchair,
+      medical: profileNeeds.medical,
+    };
+    const zone = ZoneService.resolve(origin);
+    const plan = await ShelterService.findNearest(origin, { needs });
 
     if (deviceId) {
       await Citizen.findOneAndUpdate(
@@ -32,6 +39,7 @@ class CitizenService {
             route: plan.recommended
               ? { ...plan.recommended.route, computedAt: new Date() }
               : null,
+            needs,
           },
           $setOnInsert: { deviceId },
         },

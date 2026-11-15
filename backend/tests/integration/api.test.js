@@ -342,6 +342,71 @@ describe("Realtime replay (missed events) + polling fallback", () => {
   });
 });
 
+describe("Limited mobility: Priority #1 + barrier-free evacuation", () => {
+  const wheelchairUser = async () => {
+    const deviceId = uuid();
+    await api("PUT", "/citizen/profile", {
+      body: { deviceId, accessibility: { wheelchair: true, limitedMobility: true } },
+    });
+    return deviceId;
+  };
+
+  test("profile flag makes the SOS Priority #1 — top of the queue with a brigade", async () => {
+    await resetWorld();
+    await sendSos({ type: "medical", headcount: 10, vulnerable: { elderly: true, child: true } });
+    const deviceId = await wheelchairUser();
+    const vip = await sendSos({ deviceId, type: "flood" });
+    assert.equal(vip.data.sos.priorityOne, true);
+    assert.equal(vip.data.sos.accessibility.wheelchair, true);
+    const queue = (await api("GET", "/dispatcher/sos/queue", { token: dispatcher.accessToken })).data.queue;
+    assert.equal(queue[0].id, vip.data.sos.id);
+    assert.ok(queue[0].recommendedBrigade);
+  });
+
+  test("evacuation plan is barrier-free: no stairs/steep segments, step-free shelter", async () => {
+    await resetWorld();
+    const deviceId = await wheelchairUser();
+    const plan = (await api("GET", `/citizen/evacuation?lat=40.395&lng=49.845&deviceId=${deviceId}`)).data;
+    assert.equal(plan.needs.accessible, true);
+    assert.equal(plan.routing.accessible, true);
+    assert.equal(plan.recommended.shelter.accessible, true);
+    const roads = (await api("GET", "/roads")).data.edges;
+    const byId = new Map(roads.map((e) => [e.edgeId, e]));
+    for (const id of plan.recommended.route.edgeIds) {
+      const e = byId.get(id);
+      assert.ok(!e.stairs && !e.steepSlope && !e.obstacle && !e.damaged, `barrier on ${id}`);
+    }
+    // the same request without the profile can use stairs-only shelters
+    const anyone = (await api("GET", "/citizen/evacuation?lat=40.395&lng=49.845")).data;
+    assert.equal(anyone.needs.accessible, false);
+  });
+
+  test("?mode=accessible forces a barrier-free route without a profile", async () => {
+    const plan = (await api("GET", "/citizen/evacuation?lat=40.395&lng=49.845&mode=accessible")).data;
+    assert.equal(plan.routing.accessible, true);
+  });
+
+  test("a new obstacle on the route reroutes only barrier-free travellers", async () => {
+    await resetWorld();
+    const deviceId = await wheelchairUser();
+    const plan = (await api("GET", `/citizen/evacuation?lat=40.395&lng=49.845&deviceId=${deviceId}`)).data;
+    const edgeId = plan.recommended.route.edgeIds[1];
+    await api("POST", `/simulation/roads/${edgeId}/barrier`, { token: dispatcher.accessToken, body: { kind: "obstacle" } });
+    const state = await waitFor(async () => {
+      const s = (await api("GET", `/citizen/state?deviceId=${deviceId}`)).data.state;
+      return s.route && !s.route.edgeIds.includes(edgeId) ? s : null;
+    });
+    assert.ok(state.route.edgeIds.length > 0);
+  });
+
+  test("smart balancing explains the choice", async () => {
+    const plan = (await api("GET", "/citizen/evacuation?lat=40.395&lng=49.845")).data;
+    assert.ok(plan.explanation?.key.startsWith("balancing."));
+    assert.ok(plan.explanation.text.length > 10);
+    assert.ok("pendingArrivals" in plan.recommended.shelter);
+  });
+});
+
 describe("Feature flags", () => {
   test("public flag map, toggled at runtime by an admin", async () => {
     const before = (await api("GET", "/features")).data.features;

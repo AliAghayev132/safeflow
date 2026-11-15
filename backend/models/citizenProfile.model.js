@@ -1,4 +1,4 @@
-import { Schema, Model } from "#constants";
+import { Schema, Model, accessibilityFlags } from "#constants";
 
 /**
  * Optional citizen profile (no account — keyed by device id). Attached to the
@@ -27,9 +27,21 @@ const citizenProfileSchema = new Schema(
     medications: list,
     emergencyContacts: { type: [contactSchema], default: [] },
     language: { type: String, enum: ["az", "en", "ru"], default: "az" },
+    // Special needs — limited mobility / wheelchair → SOS Priority #1 and
+    // barrier-free routing; speech / hearing / vision raise SOS priority.
+    accessibility: {
+      limitedMobility: { type: Boolean, default: false },
+      wheelchair: { type: Boolean, default: false },
+      speechImpaired: { type: Boolean, default: false },
+      hearingImpaired: { type: Boolean, default: false },
+      visionImpaired: { type: Boolean, default: false },
+    },
   },
   { timestamps: true, versionKey: false },
 );
+
+const accessibilityOf = (doc) =>
+  Object.fromEntries(accessibilityFlags.map((f) => [f, Boolean(doc.accessibility?.[f])]));
 
 citizenProfileSchema.methods.toPublic = function () {
   return {
@@ -46,6 +58,7 @@ citizenProfileSchema.methods.toPublic = function () {
       relation: c.relation,
     })),
     language: this.language,
+    accessibility: accessibilityOf(this),
     updatedAt: this.updatedAt,
   };
 };

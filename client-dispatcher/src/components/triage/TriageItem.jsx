@@ -31,6 +31,9 @@ import { Button } from '../ui/Button'
 const VULNERABLE_ICONS = { elderly: PersonStanding, child: Baby, disabled: Accessibility }
 
 /** Hover / focus popover listing how the priority score was computed. */
+// Citizen special needs shown on the ticket (Priority #1 = limited mobility / wheelchair)
+const A11Y_FLAGS = ['wheelchair', 'limitedMobility', 'speechImpaired', 'hearingImpaired', 'visionImpaired']
+
 const PriorityScore = ({ sos, pinned }) => {
   const { t } = useTranslation()
   const breakdown = Object.entries(sos.priorityBreakdown ?? {}).filter(([, v]) => v > 0)
@@ -167,6 +170,16 @@ export const TriageItem = ({ sos, profile, pinned = false, onFocus }) => {
           </p>
 
           <div className="flex flex-wrap gap-1 mt-2">
+            {sos.priorityOne && (
+              <Badge size="sm" variant="critical" className="font-extrabold">
+                <Accessibility className="w-3 h-3" /> {t('a11yTriage.priorityOne')}
+              </Badge>
+            )}
+            {A11Y_FLAGS.filter((f) => sos.accessibility?.[f]).map((f) => (
+              <Badge key={f} size="sm" variant="info">
+                <Accessibility className="w-3 h-3" /> {t(`a11yTriage.flag.${f}`)}
+              </Badge>
+            ))}
             <Badge size="sm" variant={sos.headcount > 1 ? 'warning' : 'neutral'}>
               <Users className="w-3 h-3" /> {t('triage.headcount', { count: sos.headcount ?? 1 })}
             </Badge>

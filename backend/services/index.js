@@ -14,6 +14,7 @@ export { AuthTokenService } from "./AuthTokenService.js";
 export { RoutingService, routingService } from "./RoutingService.js";
 export { RouteService } from "./RouteService.js";
 export { RoadService } from "./RoadService.js";
+export { HazardService } from "./HazardService.js";
 
 // Domain
 export { ZoneService } from "./ZoneService.js";

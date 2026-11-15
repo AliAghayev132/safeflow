@@ -17,6 +17,7 @@ const routeSchema = new Schema(
     provider: { type: String, default: "graph" },
     approximate: { type: Boolean, default: false },
     bearing: { type: Number, default: null },
+    accessible: { type: Boolean, default: false },
     computedAt: { type: Date, default: null },
   },
   { _id: false },
@@ -34,6 +35,11 @@ const citizenSchema = new Schema(
       default: null,
     },
     route: { type: routeSchema, default: null },
+    // Routing needs remembered for automatic reroutes
+    needs: {
+      accessible: { type: Boolean, default: false },
+      medical: { type: Boolean, default: false },
+    },
     lastSeenAt: { type: Date, default: Date.now },
   },
   { timestamps: true, versionKey: false },

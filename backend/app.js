@@ -17,6 +17,7 @@ import {
   ScenarioService,
   EventLogService,
   RouteService,
+  HazardService,
   ZoneService,
   ShelterService,
   bootstrap,
@@ -183,6 +184,7 @@ const startApp = async ({ port = config.port } = {}) => {
 
   if (!initialized) {
     RealtimeService.init();
+    await HazardService.init();
     ruleEngine.registerAll(rules);
     // Module rules carry their feature flag (skipped while disabled)
     for (const mod of modules) {

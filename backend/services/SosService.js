@@ -1,5 +1,5 @@
 import { SosSignal, Citizen } from "#models";
-import { domainEvents, sosNeeds, vulnerableFlags } from "#constants";
+import { domainEvents, sosNeeds, vulnerableFlags, accessibilityFlags } from "#constants";
 import { AppError, toPoint } from "#utils";
 import { assessSpam } from "#engine";
 import { eventBus } from "./EventBus.js";
@@ -7,6 +7,7 @@ import { ConfigService } from "./ConfigService.js";
 import { ZoneService } from "./ZoneService.js";
 import { TriageService } from "./TriageService.js";
 import { SpamTracker } from "./SpamTracker.js";
+import { ProfileService } from "./ProfileService.js";
 
 const cleanNeeds = (needs) =>
   Array.isArray(needs) ? [...new Set(needs.filter((n) => sosNeeds.includes(n)))] : undefined;
@@ -30,6 +31,12 @@ const applyDetails = (sos, d) => {
   const vulnerable = cleanVulnerable(d.vulnerable);
   if (vulnerable) {
     for (const f of vulnerableFlags) sos.vulnerable[f] = sos.vulnerable[f] || vulnerable[f];
+  }
+  // Special needs: OR-merge (a profile flag is never switched off by an SOS)
+  if (d.accessibility && typeof d.accessibility === "object") {
+    for (const f of accessibilityFlags) {
+      if (d.accessibility[f]) sos.accessibility[f] = true;
+    }
   }
   const headcount = cleanHeadcount(d.headcount);
   if (headcount) sos.headcount = Math.max(sos.headcount ?? 1, headcount);
@@ -113,7 +120,9 @@ class SosService {
       queuedOffline: Boolean(queuedOffline),
       clientCreatedAt: clientCreatedAt ? new Date(clientCreatedAt) : null,
     });
-    applyDetails(sos, details);
+    // Profile special needs (limited mobility → Priority #1) + SOS body flags
+    const profileNeeds = await ProfileService.needs(deviceId);
+    applyDetails(sos, { ...details, accessibility: { ...profileNeeds.accessibility, ...(details.accessibility ?? {}) } });
     TriageService.applyPriority(sos);
     await TriageService.applyRecommendation(sos);
 

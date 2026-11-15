@@ -5,6 +5,10 @@ const sosStatus = ["pending", "assigned", "resolved", "cancelled"];
 // Predefined needs a citizen can tap / say
 const sosNeeds = ["medical_aid", "water", "rescue_trapped", "shelter", "evacuation", "food", "power"];
 const vulnerableFlags = ["elderly", "child", "disabled"];
+// Citizen special needs (profile). limitedMobility / wheelchair → Priority #1
+// + barrier-free routing; the others raise SOS priority.
+const accessibilityFlags = ["limitedMobility", "wheelchair", "speechImpaired", "hearingImpaired", "visionImpaired"];
+const priorityOneFlags = ["limitedMobility", "wheelchair"];
 // Disaster types for the "what to do now" guides (client-side content)
 const disasterTypes = ["earthquake", "fire", "flood", "collapse"];
 
@@ -46,6 +50,8 @@ export {
   sosStatus,
   sosNeeds,
   vulnerableFlags,
+  accessibilityFlags,
+  priorityOneFlags,
   disasterTypes,
   citizenStatus,
   shelterTypes,

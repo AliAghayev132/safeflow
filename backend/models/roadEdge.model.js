@@ -15,6 +15,11 @@ const roadEdgeSchema = new Schema(
     // 0 = free flow, 1 = gridlock
     congestion: { type: Number, default: 0, min: 0, max: 1 },
     closedReason: { type: String, default: "" },
+    // Accessibility barriers (barrier-free routing avoids these)
+    stairs: { type: Boolean, default: false },
+    steepSlope: { type: Boolean, default: false },
+    obstacle: { type: Boolean, default: false },
+    damaged: { type: Boolean, default: false },
     closedAt: { type: Date, default: null },
   },
   { timestamps: true, versionKey: false },
@@ -32,6 +37,10 @@ roadEdgeSchema.methods.toPublic = function () {
     status: this.status,
     congestion: this.congestion,
     closedReason: this.closedReason,
+    stairs: this.stairs,
+    steepSlope: this.steepSlope,
+    obstacle: this.obstacle,
+    damaged: this.damaged,
     closedAt: this.closedAt,
   };
 };

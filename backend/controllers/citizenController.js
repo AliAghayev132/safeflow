@@ -37,6 +37,7 @@ const requireClientId = (value) => {
 };
 
 const pickDetails = (b = {}) => ({
+  accessibility: b.accessibility,
   needs: b.needs,
   headcount: b.headcount,
   vulnerable: b.vulnerable,
@@ -65,7 +66,8 @@ const listShelters = asyncHandler(async (_req, res) => {
 const getEvacuationPlan = asyncHandler(async (req, res) => {
   const origin = await resolveOrigin(req.query);
   const deviceId = isDeviceId(req.query.deviceId) ? req.query.deviceId : null;
-  return ok(res, await CitizenService.planEvacuation({ deviceId, origin }));
+  const mode = req.query.mode === "accessible" ? "accessible" : undefined;
+  return ok(res, await CitizenService.planEvacuation({ deviceId, origin, mode }));
 });
 
 /** GET /api/citizen/state?deviceId — status + active route + own SOS. */

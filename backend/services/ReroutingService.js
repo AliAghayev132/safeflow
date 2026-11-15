@@ -13,7 +13,8 @@ class ReroutingService {
     const origin = fromPoint(citizen.location);
     if (!origin) return false;
 
-    const plan = await ShelterService.findNearest(origin, { excludeIds });
+    const needs = { accessible: Boolean(citizen.needs?.accessible), medical: Boolean(citizen.needs?.medical) };
+    const plan = await ShelterService.findNearest(origin, { excludeIds, needs });
     const previousShelterId = citizen.targetShelter?.toString() ?? null;
 
     citizen.targetShelter = plan.recommended?.shelter.id ?? null;
@@ -30,6 +31,7 @@ class ReroutingService {
       recommended: plan.recommended,
       options: plan.options,
       routing: plan.routing,
+      explanation: plan.explanation,
     });
     return true;
   }
@@ -41,6 +43,23 @@ class ReroutingService {
       status: { $ne: "safe" },
     });
     const context = { edgeId: edge.edgeId, roadName: edge.name };
+    for (const citizen of citizens) {
+      await ReroutingService.#reroute(citizen, "road_closed", context);
+    }
+    return citizens.length;
+  }
+
+  /**
+   * A barrier appeared on a segment (obstacle / damage / stairs): only
+   * citizens on a barrier-free route through it need a new one.
+   */
+  static async forBarrierEdge(edge) {
+    const citizens = await Citizen.find({
+      "route.edgeIds": edge.edgeId,
+      "needs.accessible": true,
+      status: { $ne: "safe" },
+    });
+    const context = { edgeId: edge.edgeId, roadName: edge.name, barrier: true };
     for (const citizen of citizens) {
       await ReroutingService.#reroute(citizen, "road_closed", context);
     }
@@ -80,7 +99,9 @@ class ReroutingService {
       const origin = fromPoint(citizen.location);
       if (!origin || haversineMeters(origin, shelter) > radiusMeters) continue;
 
-      const plan = await ShelterService.findNearest(origin);
+      const plan = await ShelterService.findNearest(origin, {
+        needs: { accessible: Boolean(citizen.needs?.accessible), medical: Boolean(citizen.needs?.medical) },
+      });
       const bestId = plan.recommended?.shelter.id ?? null;
       const currentId = citizen.targetShelter?.toString() ?? null;
       if (bestId === shelter.id && bestId !== currentId) {

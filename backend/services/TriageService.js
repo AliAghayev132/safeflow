@@ -13,9 +13,10 @@ import { BrigadeService } from "./BrigadeService.js";
 class TriageService {
   /** Recompute and store priority on an SOS document (not saved). */
   static applyPriority(sos) {
-    const { score, breakdown } = priorityScore(sos, ConfigService.get("triage"));
+    const { score, breakdown, priorityOne } = priorityScore(sos, ConfigService.get("triage"));
     sos.priority = score;
     sos.priorityBreakdown = breakdown;
+    sos.priorityOne = priorityOne;
     return score;
   }
 
@@ -29,7 +30,8 @@ class TriageService {
       sos.recommendedBrigade = null;
       return null;
     }
-    if (sos.priority < autoAssignMinScore) {
+    // Priority #1 always gets a brigade recommendation
+    if (sos.priority < autoAssignMinScore && !sos.priorityOne) {
       sos.recommendedBrigade = null;
       return null;
     }
