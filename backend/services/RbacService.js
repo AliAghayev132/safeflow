@@ -88,6 +88,7 @@ class RbacService {
       operatorId: operator._id.toString(),
       username: operator.username,
       brigadeId: operator.brigade?.toString() ?? null,
+      shelterId: operator.shelter?.toString() ?? null,
       permissions: RbacService.permissionsFor(operator.role),
     };
   }

@@ -23,5 +23,6 @@
 import partner from "./partner/index.js";
 import volunteers from "./volunteers/index.js";
 import accessibility from "./accessibility/index.js";
+import drones from "./drones/index.js";
 
-export const modules = [partner, volunteers, accessibility];
+export const modules = [partner, volunteers, accessibility, drones];

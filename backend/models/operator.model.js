@@ -27,6 +27,8 @@ const operatorSchema = new Schema(
     },
     // Brigade lead → the brigade they command
     brigade: { type: Schema.Types.ObjectId, ref: "Brigade", default: null },
+    // Shelter manager → the assembly point they run
+    shelter: { type: Schema.Types.ObjectId, ref: "Shelter", default: null },
     isActive: { type: Boolean, default: true },
     lastLoginAt: { type: Date, default: null },
   },
@@ -50,6 +52,7 @@ operatorSchema.methods.toPublic = function () {
     fullName: this.fullName,
     role: this.role,
     brigade: this.brigade?.toString() ?? null,
+    shelter: this.shelter?.toString() ?? null,
   };
 };
 
