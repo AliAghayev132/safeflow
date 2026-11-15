@@ -15,7 +15,7 @@ export const RouteNotice = ({ route, routing }) => {
     return (
       <div role="status" className="flex items-start gap-3 rounded-2xl border-2 border-warn bg-warn-soft p-3">
         <span
-          className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-warn text-white"
+          className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-warn text-white"
           aria-hidden
         >
           <Navigation2 className="h-5 w-5" style={{ transform: `rotate(${route.bearing ?? 0}deg)` }} />

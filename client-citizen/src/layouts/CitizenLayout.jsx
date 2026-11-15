@@ -5,6 +5,7 @@ import { clsx } from 'clsx'
 import { Icon3D, LanguageSwitcher } from '@components/ui'
 import { OfflineBanner } from '@components/OfflineBanner'
 import { ConnectionPill } from '@components/ConnectionPill'
+import { ContrastToggle } from '@/modules/accessibility'
 
 const navItems = [
   { to: '/', key: 'sos', icon: 'sos', end: true },
@@ -23,6 +24,13 @@ export const CitizenLayout = () => {
 
   return (
     <div className="flex min-h-full flex-col">
+      {/* WCAG 2.4.1 — bypass blocks */}
+      <a
+        href="#main"
+        className="sr-only focus:not-sr-only focus:fixed focus:left-3 focus:top-3 focus:z-[1000] focus:flex focus:min-h-12 focus:items-center focus:rounded-xl focus:bg-brand focus:px-4 focus:text-sm focus:font-bold focus:text-white"
+      >
+        {t('a11y.skipToContent')}
+      </a>
       <header className="sticky top-0 z-[500] border-b border-line bg-surface">
         <div className="mx-auto flex h-14 max-w-6xl items-center gap-2 px-3 sm:px-4">
           <Icon3D name="shield" size={30} />
@@ -39,7 +47,7 @@ export const CitizenLayout = () => {
                 end={item.end}
                 className={({ isActive }) =>
                   clsx(
-                    'flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-semibold transition-colors',
+                    'flex min-h-12 items-center gap-2 rounded-xl px-3 text-sm font-semibold transition-colors',
                     isActive ? 'bg-brand text-white' : 'text-ink-soft hover:bg-canvas'
                   )
                 }
@@ -52,6 +60,7 @@ export const CitizenLayout = () => {
 
           <div className="ml-auto flex items-center gap-2">
             <ConnectionPill />
+            <ContrastToggle />
             <LanguageSwitcher />
           </div>
         </div>
@@ -59,7 +68,7 @@ export const CitizenLayout = () => {
 
       <OfflineBanner />
 
-      <main className="mx-auto w-full max-w-6xl flex-1 px-3 pb-28 pt-3 sm:px-4 md:pb-8">
+      <main id="main" tabIndex={-1} className="mx-auto w-full max-w-6xl flex-1 px-3 pb-28 pt-3 focus:outline-none sm:px-4 md:pb-8">
         <Outlet />
       </main>
 

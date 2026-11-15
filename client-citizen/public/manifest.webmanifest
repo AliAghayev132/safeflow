@@ -5,5 +5,20 @@
   "display": "standalone",
   "background_color": "#f3f4f6",
   "theme_color": "#12305a",
-  "icons": [{ "src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }]
+  "icons": [{ "src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }],
+  "shortcuts": [
+    {
+      "name": "SOS göndər",
+      "short_name": "SOS",
+      "description": "Tətbiqi açmadan son məlum mövqe ilə dərhal SOS göndərir",
+      "url": "/quick-sos",
+      "icons": [{ "src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml" }]
+    },
+    {
+      "name": "Siri / Assistant qısayolları",
+      "short_name": "Qısayollar",
+      "url": "/shortcuts",
+      "icons": [{ "src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml" }]
+    }
+  ]
 }

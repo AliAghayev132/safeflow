@@ -64,7 +64,7 @@ export const LocationBar = () => {
           id="zone-select"
           value={originSource === 'zone' ? (zoneCode ?? '') : ''}
           onChange={(e) => e.target.value && dispatch(setZone(e.target.value))}
-          className="h-11 min-w-0 flex-1 rounded-xl border border-line-strong bg-surface px-3 text-sm font-medium text-ink focus:border-brand focus:outline-none"
+          className="h-12 min-w-0 flex-1 rounded-xl border border-line-strong bg-surface px-3 text-sm font-medium text-ink focus:border-brand focus:outline-none"
         >
           <option value="">{t('evacuation.chooseZone')}</option>
           {zones.map((z) => (

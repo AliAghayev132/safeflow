@@ -25,7 +25,7 @@
   --color-sos-hover: #a50d26;
   --color-sos-soft: #fbe9ec;
 
-  --color-safe: #157f3b;
+  --color-safe: #137837; /* 4.87:1 on safe-soft, 5.57:1 white-on (WCAG AA) */
   --color-safe-hover: #106530;
   --color-safe-soft: #e5f3ea;
 
@@ -100,4 +100,76 @@ body {
 /* Safe-area padding for the fixed bottom navigation on phones */
 .pb-safe {
   padding-bottom: env(safe-area-inset-bottom);
+}
+
+/* ============ ACCESSIBILITY (WCAG 2.1 AA) ============ */
+
+/* 2.4.7 Focus visible — a clear, solid focus ring on every focusable element */
+:where(a, button, input, select, textarea, summary, [tabindex]):focus-visible {
+  outline: 3px solid var(--color-brand);
+  outline-offset: 2px;
+}
+
+/* High-contrast mode: solid colours only, darker text and borders.
+   Applied when the user turns it on (.hc) or the OS asks for more contrast
+   (unless the user explicitly turned it off: .hc-off). */
+:root.hc {
+  --color-canvas: #ffffff;
+  --color-surface: #ffffff;
+  --color-ink: #000000;
+  --color-ink-soft: #000000;
+  --color-muted: #1f2937;
+  --color-line: #4b5563;
+  --color-line-strong: #000000;
+  --color-brand: #081a33;
+  --color-brand-hover: #000000;
+  --color-brand-soft: #dbe4f0;
+  --color-sos: #9b0019;
+  --color-sos-hover: #6e0012;
+  --color-sos-soft: #ffe1e6;
+  --color-safe: #0a5224;
+  --color-safe-hover: #063a19;
+  --color-safe-soft: #d9f0e1;
+  --color-warn: #6b3200;
+  --color-warn-soft: #ffe9d1;
+  --color-full: #7a2400;
+  --color-full-soft: #ffe3d6;
+  --color-info: #0a2f8f;
+  --color-info-soft: #dde6fb;
+}
+
+@media (prefers-contrast: more) {
+  :root:not(.hc-off) {
+    --color-canvas: #ffffff;
+    --color-surface: #ffffff;
+    --color-ink: #000000;
+    --color-ink-soft: #000000;
+    --color-muted: #1f2937;
+    --color-line: #4b5563;
+    --color-line-strong: #000000;
+    --color-brand: #081a33;
+    --color-brand-hover: #000000;
+    --color-sos: #9b0019;
+    --color-sos-hover: #6e0012;
+    --color-safe: #0a5224;
+    --color-warn: #6b3200;
+    --color-full: #7a2400;
+    --color-info: #0a2f8f;
+  }
+}
+
+:root.hc :where(a, button, input, select, textarea):focus-visible {
+  outline-width: 4px;
+}
+
+/* User preference — no motion unless wanted */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }

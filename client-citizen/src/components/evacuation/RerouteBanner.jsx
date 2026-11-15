@@ -34,7 +34,7 @@ export const RerouteBanner = () => {
       role="alert"
       className={`animate-slide-down flex items-start gap-3 rounded-2xl p-3 text-white ${isOpened ? 'bg-safe' : 'bg-sos'}`}
     >
-      <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-white">
+      <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-white">
         <Icon3D name={rerouteIcons[reason]} size={30} />
       </span>
       <div className="min-w-0 flex-1">
@@ -49,7 +49,7 @@ export const RerouteBanner = () => {
       <button
         type="button"
         onClick={() => dispatch(dismissRerouteNotice())}
-        className="rounded-lg p-1 text-white/90 hover:bg-white/15"
+        className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg text-white/90 hover:bg-white/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
         aria-label={t('common.close')}
       >
         <X className="h-4 w-4" />

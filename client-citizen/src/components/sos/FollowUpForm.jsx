@@ -16,7 +16,7 @@ const Toggle = ({ active, onClick, children }) => (
     aria-pressed={active}
     onClick={onClick}
     className={clsx(
-      'flex min-h-11 items-center gap-1.5 rounded-xl border-2 px-3 text-sm font-bold transition-colors',
+      'flex min-h-12 items-center gap-1.5 rounded-xl border-2 px-3 text-sm font-bold transition-colors',
       active ? 'border-brand bg-brand text-white' : 'border-line-strong bg-surface text-ink hover:bg-canvas'
     )}
   >
@@ -76,7 +76,7 @@ export const FollowUpForm = ({ ticket }) => {
             type="button"
             aria-label="-1"
             onClick={() => setHeadcount((n) => Math.max(1, n - 1))}
-            className="flex h-11 w-11 items-center justify-center rounded-xl border-2 border-line-strong text-ink"
+            className="flex h-12 w-12 items-center justify-center rounded-xl border-2 border-line-strong text-ink"
           >
             <Minus className="h-5 w-5" />
           </button>
@@ -85,7 +85,7 @@ export const FollowUpForm = ({ ticket }) => {
             type="button"
             aria-label="+1"
             onClick={() => setHeadcount((n) => Math.min(50, n + 1))}
-            className="flex h-11 w-11 items-center justify-center rounded-xl border-2 border-line-strong text-ink"
+            className="flex h-12 w-12 items-center justify-center rounded-xl border-2 border-line-strong text-ink"
           >
             <Plus className="h-5 w-5" />
           </button>

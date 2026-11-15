@@ -32,7 +32,7 @@ export const SosTypeGrid = ({ onSend, sendingType }) => {
             >
               <span
                 className={clsx(
-                  'flex h-11 w-11 shrink-0 items-center justify-center rounded-full',
+                  'flex h-12 w-12 shrink-0 items-center justify-center rounded-full',
                   sending ? 'bg-white' : 'bg-ink'
                 )}
               >

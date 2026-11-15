@@ -14,7 +14,7 @@ export const occupancyTone = (rate = 0) => {
 }
 
 export const occupancyColors = {
-  ok: { bar: 'bg-safe', text: 'text-safe', soft: 'bg-safe-soft', hex: '#157f3b' },
+  ok: { bar: 'bg-safe', text: 'text-safe', soft: 'bg-safe-soft', hex: '#137837' },
   busy: { bar: 'bg-warn', text: 'text-warn', soft: 'bg-warn-soft', hex: '#b45309' },
   full: { bar: 'bg-full', text: 'text-full', soft: 'bg-full-soft', hex: '#c2410c' },
 }

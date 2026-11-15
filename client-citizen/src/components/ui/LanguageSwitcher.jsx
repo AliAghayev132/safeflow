@@ -20,7 +20,7 @@ export const LanguageSwitcher = ({ className }) => {
           title={t(`lang.${lng}Name`)}
           onClick={() => setLanguage(lng)}
           className={clsx(
-            'h-8 min-w-9 rounded-lg px-2 text-xs font-extrabold transition-colors',
+            'h-12 min-w-12 rounded-lg px-2 text-xs font-extrabold transition-colors',
             i18n.language === lng ? 'bg-brand text-white' : 'text-ink-soft hover:bg-canvas'
           )}
         >
