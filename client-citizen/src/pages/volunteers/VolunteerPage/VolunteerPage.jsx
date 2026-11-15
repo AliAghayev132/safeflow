@@ -117,7 +117,7 @@ const RegisterForm = ({ profile, deviceId }) => {
       </div>
       {!profile?.consent?.given && (
         <label className="flex min-h-12 items-start gap-3 rounded-xl border-2 border-line-strong p-3 text-sm text-ink">
-          <input type="checkbox" className="mt-0.5 h-6 w-6 shrink-0 accent-brand" checked={form.consent} onChange={(e) => setForm({ ...form, consent: e.target.checked })} />
+          <input type="checkbox" aria-label={t('volunteer.form.consent')} className="mt-0.5 h-6 w-6 shrink-0 accent-brand" checked={form.consent} onChange={(e) => setForm({ ...form, consent: e.target.checked })} />
           <span>
             <strong className="block">{t('volunteer.form.consent')}</strong>
             <span className="text-muted">{t('volunteer.form.consentText')}</span>
