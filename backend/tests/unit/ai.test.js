@@ -110,6 +110,16 @@ describe("AI — supply distribution planner", () => {
     assert.equal(plan.schedule[0].shelterId, "B");
   });
 
+  test("round-robin: every shelter gets a delivery before any gets a second", () => {
+    const plan = planDistribution(
+      ["A", "B", "C"].map((id, i) => ({ id, name: id, lat: 40.4 + i * 0.01, lng: 49.85, people: 200, stock: {} })),
+      [{ id: "d1", code: "D1", payloadKg: 10, speedKmh: 60, base }],
+      { ...opts, maxTrips: 3 },
+    );
+    assert.deepEqual(new Set(plan.schedule.map((t) => t.shelterId)), new Set(["A", "B", "C"]));
+    assert.ok(plan.totals.unscheduledKg > 0);
+  });
+
   test("already requested quantities reduce the deficit", () => {
     const plan = planDistribution(
       [{ id: "A", name: "A", lat: 40.41, lng: 49.86, people: 10, stock: {}, outstanding: { water: 30, food: 20, medicine: 1, first_aid: 1 } }],

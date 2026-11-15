@@ -128,7 +128,7 @@ export const ALL_ROUTES = [...ROUTES, ...MODULE_ROUTES]
   .sort((a, b) => (a.r.order ?? 1000 + a.i) - (b.r.order ?? 1000 + b.i))
   .map(({ r }) => r)
 
-export const SECTIONS = ['Operations', 'Resources', 'Admin']
+export const SECTIONS = ['Operations', 'Resources', 'Intelligence', 'Admin']
 
 /**
  * Routes the user may open, in menu order: permission (RBAC) AND, for

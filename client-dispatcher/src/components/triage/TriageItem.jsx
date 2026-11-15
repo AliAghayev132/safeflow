@@ -228,6 +228,14 @@ export const TriageItem = ({ sos, profile, pinned = false, onFocus }) => {
           </div>
 
           {sos.injuries && <p className="text-xs text-text mt-1.5">{sos.injuries}</p>}
+          {sos.ai && (
+            <p className="mt-1.5 flex flex-wrap items-center gap-1.5 text-xs text-text">
+              <Badge size="sm" variant={sos.ai.priority === 'critical' ? 'solidCritical' : sos.ai.priority === 'high' ? 'critical' : 'info'}>
+                {t('triageAi.badge')} · {t(`triageAi.priority.${sos.ai.priority}`, { defaultValue: sos.ai.priority })}
+              </Badge>
+              {sos.ai.location?.text && <span className="text-muted">{sos.ai.location.text}{sos.ai.location.floor ? ` · ${sos.ai.location.floor}` : ''}</span>}
+            </p>
+          )}
           {sos.transcript && (
             <p className="text-xs text-muted mt-1.5 flex items-start gap-1">
               <Mic className="w-3.5 h-3.5 shrink-0 mt-px" />

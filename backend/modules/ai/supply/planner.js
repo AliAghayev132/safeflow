@@ -82,51 +82,67 @@ export const planDistribution = (shelters, fleet, opts) => {
   const drones = fleet.map((d) => ({ ...d, freeAt: Math.max(0, d.freeInSec ?? 0) }));
   const trips = [];
 
-  for (const row of ordered) {
-    // Split the deficit into loads that fit the largest payload, kind by kind
-    let remaining = KINDS.map((k) => ({ kind: k, qty: row.deficit[k] })).filter((x) => x.qty > 0);
-    let guard = 0;
-    // Planning window: at most `maxTrips` trips in total (the rest is reported
-    // as unscheduled and planned in the next cycle)
-    while (remaining.length && drones.length && trips.length < maxTrips && guard++ < 50) {
-      // Earliest arrival wins
-      const options = drones.map((d) => {
-        const km = distanceKm(d.base, row);
-        const flySec = (km / Math.max(1, d.speedKmh)) * 3600;
-        return { d, km, departSec: d.freeAt + loadingSec, arriveSec: d.freeAt + loadingSec + flySec, backSec: d.freeAt + loadingSec + 2 * flySec };
-      });
-      const best = options.sort((a, b) => a.arriveSec - b.arriveSec)[0];
-      let capacity = best.d.payloadKg;
-      const items = [];
-      for (const item of remaining) {
-        const w = unitWeightKg[item.kind] ?? 1;
-        const fit = Math.min(item.qty, Math.floor(capacity / w));
-        if (fit > 0) {
-          items.push({ kind: item.kind, quantity: fit });
-          item.qty -= fit;
-          capacity -= fit * w;
-        }
+  // Remaining quantities per shelter (kind by kind)
+  const remaining = new Map(
+    ordered.map((row) => [row.shelterId, KINDS.map((k) => ({ kind: k, qty: row.deficit[k] })).filter((x) => x.qty > 0)]),
+  );
+
+  /** One trip to `row` with the drone that arrives earliest; false if nothing fits. */
+  const scheduleTrip = (row) => {
+    const left = remaining.get(row.shelterId);
+    const options = drones.map((d) => {
+      const km = distanceKm(d.base, row);
+      const flySec = (km / Math.max(1, d.speedKmh)) * 3600;
+      return { d, km, departSec: d.freeAt + loadingSec, arriveSec: d.freeAt + loadingSec + flySec, backSec: d.freeAt + loadingSec + 2 * flySec };
+    });
+    const best = options.sort((x, y) => x.arriveSec - y.arriveSec)[0];
+    let capacity = best.d.payloadKg;
+    const items = [];
+    for (const item of left) {
+      const w = unitWeightKg[item.kind] ?? 1;
+      const fit = Math.min(item.qty, Math.floor(capacity / w));
+      if (fit > 0) {
+        items.push({ kind: item.kind, quantity: fit });
+        item.qty -= fit;
+        capacity -= fit * w;
       }
-      if (!items.length) break; // a single unit heavier than any payload
-      remaining = remaining.filter((x) => x.qty > 0);
-      const loadKg = Math.round((best.d.payloadKg - capacity) * 10) / 10;
-      best.d.freeAt = best.backSec;
-      const trip = {
-        shelterId: row.shelterId,
-        shelter: row.name,
-        droneId: best.d.id,
-        drone: best.d.code,
-        items,
-        loadKg,
-        distanceKm: Math.round(best.km * 100) / 100,
-        departAt: new Date(now + best.departSec * 1000),
-        etaAt: new Date(now + best.arriveSec * 1000),
-        etaMin: Math.round(best.arriveSec / 60),
-      };
-      row.trips.push(trip);
-      trips.push(trip);
     }
-    row.unscheduledKg = Math.round(remaining.reduce((s, x) => s + x.qty * (unitWeightKg[x.kind] ?? 1), 0) * 10) / 10;
+    if (!items.length) return false; // a single unit heavier than any payload
+    remaining.set(row.shelterId, left.filter((x) => x.qty > 0));
+    best.d.freeAt = best.backSec;
+    const trip = {
+      shelterId: row.shelterId,
+      shelter: row.name,
+      droneId: best.d.id,
+      drone: best.d.code,
+      items,
+      loadKg: Math.round((best.d.payloadKg - capacity) * 10) / 10,
+      distanceKm: Math.round(best.km * 100) / 100,
+      departAt: new Date(now + best.departSec * 1000),
+      etaAt: new Date(now + best.arriveSec * 1000),
+      etaMin: Math.round(best.arriveSec / 60),
+    };
+    row.trips.push(trip);
+    trips.push(trip);
+    return true;
+  };
+
+  // Round-robin in priority order: every shelter with a deficit gets its first
+  // delivery before any shelter gets a second one (fair under scarcity).
+  // Planning window: at most `maxTrips` trips; the rest is reported as
+  // unscheduled and planned in the next cycle.
+  let progress = drones.length > 0;
+  while (progress && trips.length < maxTrips) {
+    progress = false;
+    for (const row of ordered) {
+      if (trips.length >= maxTrips) break;
+      if (!remaining.get(row.shelterId).length) continue;
+      if (scheduleTrip(row)) progress = true;
+    }
+  }
+  for (const row of ordered) {
+    row.unscheduledKg =
+      Math.round(remaining.get(row.shelterId).reduce((sum, x) => sum + x.qty * (unitWeightKg[x.kind] ?? 1), 0) * 10) / 10;
   }
 
   trips.sort((a, b) => a.etaAt - b.etaAt);
