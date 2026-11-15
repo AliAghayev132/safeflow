@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="az">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SafeFlow Demo</title>
+<style>
+  :root {
+    --bg: #e9edf2;
+    --bar: #14213d;
+    --bar-text: #ffffff;
+    --accent: #d62828;
+    --btn: #24365c;
+    --btn-active: #d62828;
+    --phone: #111418;
+    --frame-bg: #ffffff;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; }
+  body {
+    background: var(--bg);
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    display: flex; flex-direction: column; overflow: hidden;
+  }
+  header {
+    flex: 0 0 auto; display: flex; align-items: center; gap: 12px;
+    padding: 8px 16px; background: var(--bar); color: var(--bar-text);
+  }
+  .brand { font-weight: 700; letter-spacing: .3px; white-space: nowrap; }
+  .brand b { color: var(--accent); }
+  #title {
+    flex: 1 1 auto; min-width: 0; padding: 4px 10px; border-radius: 6px;
+    font-size: 18px; font-weight: 600; outline: none;
+    border: 1px dashed transparent;
+  }
+  #title:hover, #title:focus { border-color: #5a6b8c; background: #1d2d50; }
+  .modes { display: flex; gap: 6px; }
+  .modes button {
+    border: 0; border-radius: 6px; padding: 7px 12px; cursor: pointer;
+    background: var(--btn); color: var(--bar-text); font: inherit; font-size: 14px;
+  }
+  .modes button[aria-pressed="true"] { background: var(--btn-active); }
+  .reload { background: #3b4a6b !important; }
+  main {
+    flex: 1 1 auto; display: flex; gap: 20px; padding: 16px; min-height: 0;
+    align-items: center; justify-content: center;
+  }
+  .phone {
+    flex: 0 0 auto; width: 400px; height: 820px; max-height: 100%;
+    background: var(--phone); border-radius: 44px; padding: 14px;
+    display: flex; flex-direction: column;
+  }
+  .phone .notch {
+    height: 22px; flex: 0 0 auto; display: flex; justify-content: center; align-items: center;
+  }
+  .phone .notch span { width: 110px; height: 8px; border-radius: 4px; background: #2b3038; }
+  .phone iframe {
+    flex: 1 1 auto; width: 100%; border: 0; border-radius: 30px; background: var(--frame-bg);
+  }
+  .desk {
+    flex: 1 1 auto; height: 100%; min-width: 0; background: var(--frame-bg);
+    border-radius: 10px; overflow: hidden; border: 1px solid #c6ced9;
+  }
+  .desk iframe { width: 100%; height: 100%; border: 0; display: block; }
+  body.mode-mobile .desk { display: none; }
+  body.mode-dispatcher .phone { display: none; }
+  body.mode-dispatcher main { padding: 0; }
+  body.mode-dispatcher .desk { border-radius: 0; border: 0; }
+</style>
+</head>
+<body class="mode-split">
+<header>
+  <div class="brand">Safe<b>Flow</b></div>
+  <div id="title" contenteditable="true" spellcheck="false" title="Səhnə adını dəyişmək üçün klikləyin">Səhnə 1 — Giriş</div>
+  <div class="modes" role="group" aria-label="Görünüş rejimi">
+    <button data-mode="mobile" aria-pressed="false">Yalnız mobil</button>
+    <button data-mode="split" aria-pressed="true">Yan-yana</button>
+    <button data-mode="dispatcher" aria-pressed="false">Yalnız dispetçer</button>
+    <button class="reload" id="reload" title="Hər iki tətbiqi yenidən yüklə">⟳</button>
+  </div>
+</header>
+<main>
+  <div class="phone">
+    <div class="notch"><span></span></div>
+    <iframe id="citizen" src="http://localhost:5173" title="Vətəndaş tətbiqi" allow="geolocation; microphone; camera"></iframe>
+  </div>
+  <div class="desk">
+    <iframe id="dispatcher" src="http://localhost:5174" title="Dispetçer paneli" allow="geolocation; microphone; camera"></iframe>
+  </div>
+</main>
+<script>
+  (function () {
+    var buttons = document.querySelectorAll(".modes button[data-mode]");
+    function setMode(mode) {
+      document.body.className = "mode-" + mode;
+      buttons.forEach(function (b) { b.setAttribute("aria-pressed", String(b.dataset.mode === mode)); });
+      try { localStorage.setItem("sf-demo-mode", mode); } catch (e) {}
+    }
+    buttons.forEach(function (b) { b.addEventListener("click", function () { setMode(b.dataset.mode); }); });
+    try { var saved = localStorage.getItem("sf-demo-mode"); if (saved) setMode(saved); } catch (e) {}
+
+    var title = document.getElementById("title");
+    try { var t = localStorage.getItem("sf-demo-title"); if (t) title.textContent = t; } catch (e) {}
+    title.addEventListener("input", function () {
+      try { localStorage.setItem("sf-demo-title", title.textContent); } catch (e) {}
+    });
+    title.addEventListener("keydown", function (e) { if (e.key === "Enter") { e.preventDefault(); title.blur(); } });
+
+    document.getElementById("reload").addEventListener("click", function () {
+      ["citizen", "dispatcher"].forEach(function (id) {
+        var f = document.getElementById(id); f.src = f.src;
+      });
+    });
+
+    // Keyboard shortcuts while not editing the title: 1 = mobile, 2 = split, 3 = dispatcher
+    document.addEventListener("keydown", function (e) {
+      if (document.activeElement === title) return;
+      if (e.key === "1") setMode("mobile");
+      if (e.key === "2") setMode("split");
+      if (e.key === "3") setMode("dispatcher");
+    });
+  })();
+</script>
+</body>
+</html>
