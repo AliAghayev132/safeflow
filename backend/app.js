@@ -83,6 +83,10 @@ const setupRoutes = (app) => {
     for (const { path, router } of mod.routers ?? []) {
       app.use(`/api${path}`, requireFeature(mod.feature), router);
     }
+    // Non-/api routes (e.g. captive-portal probes on an edge node)
+    for (const { path, router } of mod.rootRouters ?? []) {
+      app.use(path, requireFeature(mod.feature), router);
+    }
   }
 
   // Public feature-flag map (clients hide disabled features)

@@ -12,6 +12,7 @@
  *     feature:   "drones",                 // key in config.features
  *     defaults?: { ... },                  // config section (validated, editable)
  *     routers?:  [{ path: "/drones", router }],  // mounted under /api, flag-gated
+ *     rootRouters?: [{ path: "/", router }],     // mounted at the root, flag-gated
  *     rules?:    [rule, ...],              // RuleEngine rules (flag-gated)
  *     init?:     async (ctx) => {},        // after DB + core services are ready
  *     stop?:     async () => {},           // graceful shutdown

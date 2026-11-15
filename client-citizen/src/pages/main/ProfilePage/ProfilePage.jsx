@@ -4,6 +4,7 @@ import { useSelector } from 'react-redux'
 import { Plus, Trash2 } from 'lucide-react'
 
 import { Button, Card, Icon3D, PageLoader } from '@components'
+import { ModuleLinks } from '@components/ModuleLinks'
 import { useGetProfileQuery, useSaveProfileMutation, useDeleteProfileMutation } from '@store/api'
 import { selectDeviceId, selectIsOffline } from '@store/slices'
 import { errorMessage } from '@utils'
@@ -190,6 +191,7 @@ export const ProfilePage = () => {
           <p className="text-sm text-muted">{t('profile.intro')}</p>
         </div>
       </div>
+      <ModuleLinks />
       {isLoading ? <PageLoader /> : <ProfileForm key={profile?.updatedAt ?? 'new'} profile={profile} />}
     </div>
   )
