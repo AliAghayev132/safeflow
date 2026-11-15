@@ -14,7 +14,63 @@ const brigadesAdapter = createEntityAdapter({
   sortComparer: (a, b) => a.code.localeCompare(b.code),
 })
 const alertsAdapter = createEntityAdapter({ sortComparer: byCreatedDesc })
-const sosAdapter = createEntityAdapter({ sortComparer: byCreatedDesc })
+// No sortComparer: re-sorting thousands of ids on every insert was a major
+// cost during SOS floods. Ordering is done once per batch in memoized selectors.
+const sosAdapter = createEntityAdapter()
+
+// Keep the store bounded: every open ticket + the most recent closed ones.
+const MAX_CLOSED_SOS = 300
+const pruneClosedSos = (sosState) => {
+  const closed = []
+  for (const id of sosState.ids) {
+    const s = sosState.entities[id]
+    if (s.status !== 'pending' && s.status !== 'assigned') closed.push(s)
+  }
+  if (closed.length <= MAX_CLOSED_SOS) return
+  closed.sort(byCreatedDesc)
+  sosAdapter.removeMany(
+    sosState,
+    closed.slice(MAX_CLOSED_SOS).map((s) => s.id)
+  )
+}
+
+/**
+ * Apply one realtime event to the slice state (used for single events and
+ * for coalesced batches — a whole batch is ONE state update / ONE render).
+ */
+const applyEventToState = (state, { type, data }) => {
+  switch (type) {
+    case 'sos:new':
+    case 'sos:updated':
+      sosAdapter.upsertMany(state.sos, Array.isArray(data) ? data : [data])
+      break
+    case 'shelter:updated':
+      sheltersAdapter.upsertOne(state.shelters, data)
+      break
+    case 'brigade:updated':
+      brigadesAdapter.upsertOne(state.brigades, data)
+      break
+    case 'alert:new':
+    case 'alert:updated':
+      alertsAdapter.upsertOne(state.alerts, data)
+      break
+    case 'road:updated':
+      for (const edge of data) {
+        const current = state.roads.edges[edge.edgeId]
+        if (current) state.roads.edges[edge.edgeId] = { ...current, ...edge }
+      }
+      break
+    case 'stats:updated':
+      state.summary = data.summary
+      state.zones = data.zones
+      break
+    case 'scenario:updated':
+      state.scenario = data
+      break
+    default:
+      break
+  }
+}
 
 const initialState = {
   hydrated: false,
@@ -69,6 +125,12 @@ const liveSlice = createSlice({
     },
     sosUpserted: (state, { payload }) => {
       sosAdapter.upsertMany(state.sos, Array.isArray(payload) ? payload : [payload])
+      pruneClosedSos(state.sos)
+    },
+    /** Coalesced realtime events → a single state update. */
+    eventsBatched: (state, { payload }) => {
+      for (const evt of payload) applyEventToState(state, evt)
+      pruneClosedSos(state.sos)
     },
     profilesLoaded: (state, { payload }) => {
       state.profiles = { ...state.profiles, ...(payload ?? {}) }
@@ -93,6 +155,7 @@ export const {
   brigadeUpserted,
   alertUpserted,
   sosUpserted,
+  eventsBatched,
   profilesLoaded,
   scenarioUpdated,
   reset: resetLive,
@@ -124,7 +187,10 @@ export const {
 export const { selectAll: selectAlerts, selectById: selectAlertById } =
   alertsAdapter.getSelectors((state) => selectLive(state).alerts)
 
-export const { selectAll: selectSos } = sosAdapter.getSelectors((state) => selectLive(state).sos)
+const { selectAll: selectSosUnordered } = sosAdapter.getSelectors((state) => selectLive(state).sos)
+
+/** All SOS, newest first (sorted once per state change, memoized). */
+export const selectSos = createSelector([selectSosUnordered], (sos) => [...sos].sort(byCreatedDesc))
 
 export const selectActiveAlerts = createSelector([selectAlerts], (alerts) =>
   alerts.filter((a) => a.status === 'active')
@@ -133,7 +199,7 @@ export const selectActiveAlerts = createSelector([selectAlerts], (alerts) =>
 const OPEN = ['pending', 'assigned']
 
 /** Open SOS (pending / assigned) — map + density layer. */
-export const selectOpenSos = createSelector([selectSos], (sos) =>
+export const selectOpenSos = createSelector([selectSosUnordered], (sos) =>
   sos.filter((s) => OPEN.includes(s.status))
 )
 

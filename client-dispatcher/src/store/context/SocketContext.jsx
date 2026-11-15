@@ -6,15 +6,7 @@ import { io } from 'socket.io-client'
 import { useDispatch, useSelector, useStore } from 'react-redux'
 
 import { baseApi, API_ORIGIN, ALL_TAGS } from '../api/baseApi'
-import {
-  sosUpserted,
-  shelterUpserted,
-  brigadeUpserted,
-  alertUpserted,
-  roadsUpdated,
-  statsUpdated,
-  scenarioUpdated,
-} from '../slices/liveSlice'
+import { eventsBatched } from '../slices/liveSlice'
 import { alertIncoming, connectionChanged, realtimeCursor, toast } from '../slices/uiSlice'
 import { playAlarm } from '@utils'
 
@@ -35,6 +27,7 @@ export const SOCKET_EVENTS = {
   SYSTEM_RESET: 'system:reset',
 }
 
+const FLUSH_MS = 200
 const FALLBACK_AFTER_MS = 10000
 const POLL_EVERY_MS = 5000
 
@@ -67,62 +60,74 @@ export const SocketProvider = ({ children }) => {
     let disposed = false
     const E = SOCKET_EVENTS
 
+    // Cursor lives in this closure; the UI copy (System page) is refreshed on
+    // (re)connect and once per flush — not once per event.
     const saveCursor = () => dispatch(realtimeCursor({ ...cursor }))
     const refetchAll = () => dispatch(baseApi.util.invalidateTags(ALL_TAGS))
     // Profiles for new tickets come with the queue endpoint — coalesce refetches
+    // (at most one queue refetch per 5 s, even during an SOS flood)
     const refreshQueueSoon = () => {
       if (queueTimer) return
       queueTimer = setTimeout(() => {
         queueTimer = null
         dispatch(baseApi.util.invalidateTags(['Queue']))
-      }, 1500)
+      }, 5000)
     }
 
-    // ---- Event → Redux ----
+    // ---- Event batching ----
+    // During an SOS flood dozens of events arrive per second. Applying each one
+    // separately re-rendered every subscriber per event. Instead events are
+    // buffered and flushed every FLUSH_MS as ONE reducer call (one render).
+    let buffer = []
+    let flushTimer = null
+    let alarmPending = false
+
+    const flush = () => {
+      flushTimer = null
+      if (!buffer.length) return
+      const batch = buffer
+      buffer = []
+      dispatch(eventsBatched(batch))
+      for (const { type, data } of batch) {
+        if (type === E.ALERT_NEW) {
+          dispatch(alertIncoming(data.id))
+          alarmPending = true
+        }
+      }
+      if (alarmPending && !store.getState().ui.muted) playAlarm()
+      alarmPending = false
+      dispatch(realtimeCursor({ ...cursor }))
+    }
+
     const handle = (type, data) => {
       switch (type) {
         case E.SOS_NEW:
-          dispatch(sosUpserted(data))
           refreshQueueSoon()
-          break
-        case E.SOS_UPDATED:
-          dispatch(sosUpserted(data))
-          break
-        case E.SHELTER_UPDATED:
-          dispatch(shelterUpserted(data))
+          buffer.push({ type, data })
           break
         case E.BRIGADE_UPDATED: {
-          dispatch(brigadeUpserted(data))
+          buffer.push({ type, data })
           const mine = store.getState().auth.operator?.brigade
           if (mine && mine === data.id) dispatch(baseApi.util.invalidateTags(['MyBrigade']))
           break
         }
-        case E.ROAD_UPDATED:
-          dispatch(roadsUpdated(data))
-          break
-        case E.STATS_UPDATED:
-          dispatch(statsUpdated(data))
-          break
-        case E.ALERT_UPDATED:
-          dispatch(alertUpserted(data))
-          break
-        case E.ALERT_NEW:
-          dispatch(alertUpserted(data))
-          dispatch(alertIncoming(data.id))
-          if (!store.getState().ui.muted) playAlarm()
-          break
         case E.CONFIG_UPDATED:
           dispatch(baseApi.util.invalidateTags(['Config', 'Rules']))
-          break
-        case E.SCENARIO_UPDATED:
-          dispatch(scenarioUpdated(data))
-          break
+          return
         case E.SYSTEM_RESET:
+          buffer = []
           refetchAll()
           dispatch(toast.info('toast.systemReset'))
-          break
+          return
         default:
-          break
+          buffer.push({ type, data })
+      }
+      // A new red alert is flushed immediately; everything else is coalesced
+      if (type === E.ALERT_NEW) {
+        clearTimeout(flushTimer)
+        flush()
+      } else if (!flushTimer) {
+        flushTimer = setTimeout(flush, FLUSH_MS)
       }
     }
 
@@ -137,7 +142,6 @@ export const SocketProvider = ({ children }) => {
       }
       handle(evt.type, evt.data)
       cursor = { epoch: evt.epoch ?? cursor.epoch, seq: evt.seq }
-      saveCursor()
     }
 
     const applyBatch = (res) => {
@@ -242,6 +246,7 @@ export const SocketProvider = ({ children }) => {
       disposed = true
       clearTimeout(fallbackTimer)
       clearTimeout(queueTimer)
+      clearTimeout(flushTimer)
       stopPolling()
       s.removeAllListeners()
       s.disconnect()

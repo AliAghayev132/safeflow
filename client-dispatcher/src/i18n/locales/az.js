@@ -248,6 +248,9 @@ const az = {
     needsHelpHint: '{{safe}} təhlükəsiz · {{evacuating}} təxliyədə',
   },
   map: {
+    clusterTitle: '{{count}} SOS bu ərazidə',
+    clusterHint: 'Yaxınlaşdırmaq üçün klikləyin',
+    people: '{{count}} nəfər',
     layers: {
       zones: 'Zonalar',
       roads: 'Yollar',

@@ -247,6 +247,9 @@ const ru = {
     needsHelpHint: 'в безопасности: {{safe}} · эвакуируются: {{evacuating}}',
   },
   map: {
+    clusterTitle: '{{count}} SOS в этом районе',
+    clusterHint: 'Нажмите, чтобы приблизить',
+    people: '{{count}} чел.',
     layers: {
       zones: 'Зоны',
       roads: 'Дороги',

@@ -247,6 +247,9 @@ const en = {
     needsHelpHint: '{{safe}} safe · {{evacuating}} evacuating',
   },
   map: {
+    clusterTitle: '{{count}} SOS in this area',
+    clusterHint: 'Click to zoom in',
+    people: '{{count}} people',
     layers: {
       zones: 'Zones',
       roads: 'Roads',

@@ -12,6 +12,8 @@ import { useTranslation } from 'react-i18next'
 // Components
 import { Card, EmptyState, OperationsMap, TriageItem, StatCard } from '@components'
 
+const PAGE = 60
+
 const FILTERS = [
   { key: 'all', match: () => true },
   { key: 'pending', match: (s) => s.status === 'pending' && !s.spamFlagged },
@@ -32,10 +34,26 @@ export const TriagePage = () => {
   const [filter, setFilter] = useState('all')
   const [focus, setFocus] = useState(null)
 
+  // Windowed list: thousands of open SOS must not mount thousands of cards
+  const [visible, setVisible] = useState(PAGE)
+  const changeFilter = (key) => {
+    setFilter(key)
+    setVisible(PAGE)
+  }
+
   const rows = useMemo(() => queue.filter(FILTERS.find((f) => f.key === filter).match), [queue, filter])
-  const counts = Object.fromEntries(FILTERS.map((f) => [f.key, queue.filter(f.match).length]))
-  const vulnerable = queue.filter((s) => Object.values(s.vulnerable ?? {}).some(Boolean)).length
-  const people = queue.reduce((sum, s) => sum + (s.headcount ?? 1), 0)
+  const { counts, vulnerable, people } = useMemo(() => {
+    const c = Object.fromEntries(FILTERS.map((f) => [f.key, 0]))
+    let v = 0
+    let p = 0
+    for (const s of queue) {
+      for (const f of FILTERS) if (f.match(s)) c[f.key] += 1
+      if (Object.values(s.vulnerable ?? {}).some(Boolean)) v += 1
+      p += s.headcount ?? 1
+    }
+    return { counts: c, vulnerable: v, people: p }
+  }, [queue])
+  const shown = rows.slice(0, visible)
 
   return (
     <div className="p-4 space-y-4">
@@ -51,7 +69,7 @@ export const TriagePage = () => {
         {FILTERS.map((f) => (
           <button
             key={f.key}
-            onClick={() => setFilter(f.key)}
+            onClick={() => changeFilter(f.key)}
             aria-pressed={filter === f.key}
             className={`h-9 px-3 rounded-lg text-sm font-medium border cursor-pointer ${
               filter === f.key
@@ -73,15 +91,26 @@ export const TriagePage = () => {
               <EmptyState icon="safe" title={t('triage.empty')} description={t('triage.emptyHint')} />
             </Card>
           ) : (
-            rows.map((s, i) => (
-              <TriageItem
-                key={s.id}
-                sos={s}
-                profile={profiles[s.deviceId]}
-                pinned={filter === 'all' && i === 0}
-                onFocus={(item) => setFocus({ lat: item.lat, lng: item.lng, at: Date.now() })}
-              />
-            ))
+            <>
+              {shown.map((s, i) => (
+                <TriageItem
+                  key={s.id}
+                  sos={s}
+                  profile={profiles[s.deviceId]}
+                  pinned={filter === 'all' && i === 0}
+                  onFocus={(item) => setFocus({ lat: item.lat, lng: item.lng, at: Date.now() })}
+                />
+              ))}
+              {rows.length > shown.length && (
+                <button
+                  type="button"
+                  onClick={() => setVisible((v) => v + PAGE)}
+                  className="w-full h-10 rounded-lg border border-border bg-panel text-sm text-muted hover:text-text cursor-pointer"
+                >
+                  {t('app.loadMore')} · {shown.length} / {rows.length}
+                </button>
+              )}
+            </>
           )}
         </div>
         <Card padding="none" className="overflow-hidden h-[70vh] xl:sticky xl:top-4">

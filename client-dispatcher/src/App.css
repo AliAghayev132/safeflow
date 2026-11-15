@@ -255,3 +255,60 @@ body {
 input[type="range"] {
   accent-color: var(--color-info);
 }
+
+/* ============ SOS CLUSTERS (map) ============ */
+/* Area marker: disaster-type 3D icons centred, total count pill top-right.
+   Solid colours only. */
+.sos-cluster {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9999px;
+  background-color: var(--color-panel);
+  border: 3px solid var(--ring, var(--color-critical));
+  box-shadow: 0 0 0 3px rgba(11, 18, 32, 0.85);
+  cursor: pointer;
+  transition: transform 120ms ease-out;
+}
+
+.sos-cluster:hover {
+  transform: scale(1.08);
+}
+
+.sos-cluster-icons {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1px;
+}
+
+.sos-cluster-icons img {
+  display: block;
+  pointer-events: none;
+}
+
+.sos-cluster-pill {
+  position: absolute;
+  top: -8px;
+  right: -10px;
+  min-width: 22px;
+  height: 20px;
+  padding: 0 6px;
+  border-radius: 9999px;
+  background-color: var(--color-critical);
+  border: 2px solid var(--color-bg);
+  color: #ffffff;
+  font-size: 11px;
+  font-weight: 800;
+  line-height: 16px;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Clusters that contain a high-priority SOS get a second solid ring */
+.sos-cluster-urgent {
+  box-shadow:
+    0 0 0 3px rgba(11, 18, 32, 0.85),
+    0 0 0 6px var(--color-critical);
+}
