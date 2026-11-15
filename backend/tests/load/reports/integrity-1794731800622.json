@@ -1,0 +1,20 @@
+{
+  "at": "2026-11-15T08:36:40.618Z",
+  "durationMs": 9197,
+  "genuine": {
+    "sent": 500,
+    "accepted": 500,
+    "lost": 0,
+    "neededRetry": 149,
+    "missingInDb": 0,
+    "duplicateTickets": 0
+  },
+  "spam": {
+    "devices": 20,
+    "requests": 1200,
+    "accepted": 380,
+    "limited": 734,
+    "other": 86
+  },
+  "verdict": "PASS — no genuine SOS lost; spam stopped by the device limit"
+}

@@ -1,0 +1,23 @@
+// Routes
+import { AppRouter } from '@routes'
+
+// Styles
+import './App.css'
+
+// Redux
+import { store } from '@store'
+import { Provider } from 'react-redux'
+
+// Socket
+import { SocketProvider } from '@store/context'
+
+// Provider order: Redux -> Socket (needs auth token from Redux) -> Router
+export const App = () => {
+  return (
+    <Provider store={store}>
+      <SocketProvider>
+        <AppRouter />
+      </SocketProvider>
+    </Provider>
+  )
+}

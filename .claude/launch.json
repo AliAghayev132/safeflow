@@ -1,0 +1,17 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "citizen",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["--prefix", "client-citizen", "run", "dev"],
+      "port": 5173
+    },
+    {
+      "name": "dispatcher",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["--prefix", "client-dispatcher", "run", "dev"],
+      "port": 5174
+    }
+  ]
+}

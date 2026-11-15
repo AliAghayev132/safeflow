@@ -1,0 +1,30 @@
+{
+  "at": "2026-11-15T08:36:01.437Z",
+  "target": "http://localhost:5000",
+  "connections": {
+    "requested": 1020,
+    "failed": 0,
+    "connectMs": {
+      "n": 1020,
+      "p50": 107.4,
+      "p95": 292.1,
+      "p99": 294.4,
+      "max": 306
+    }
+  },
+  "sosFanoutMs": {
+    "n": 200,
+    "p50": 8.6,
+    "p95": 16.6,
+    "p99": 39.8,
+    "max": 100.6
+  },
+  "sosFanoutLost": 0,
+  "alertCreationMs": {
+    "n": 5,
+    "p50": 17.5,
+    "p95": 28.8,
+    "p99": 28.8,
+    "max": 28.8
+  }
+}

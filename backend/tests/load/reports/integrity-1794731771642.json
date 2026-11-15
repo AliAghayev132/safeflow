@@ -1,0 +1,19 @@
+{
+  "at": "2026-11-15T08:36:11.640Z",
+  "durationMs": 6259,
+  "genuine": {
+    "sent": 500,
+    "accepted": 500,
+    "lost": 0,
+    "neededRetry": 141,
+    "missingInQueue": 372
+  },
+  "spam": {
+    "devices": 20,
+    "requests": 1200,
+    "accepted": 361,
+    "limited": 696,
+    "other": 143
+  },
+  "verdict": "FAIL"
+}

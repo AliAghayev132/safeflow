@@ -1,0 +1,40 @@
+# Stress test — ramp SOS traffic until the API degrades, to find the breaking
+# point and check that degradation is controlled (timeouts / 429, no crash).
+#   npm run test:stress
+config:
+  target: "http://localhost:5000" # override: artillery run --target <url>
+  processor: "./processor.cjs"
+  http:
+    timeout: 5
+  phases:
+    - name: ramp-200
+      duration: 30
+      arrivalRate: 50
+      rampTo: 200
+    - name: ramp-500
+      duration: 30
+      arrivalRate: 200
+      rampTo: 500
+    - name: ramp-1000
+      duration: 30
+      arrivalRate: 500
+      rampTo: 1000
+    - name: cool-down
+      duration: 15
+      arrivalRate: 20
+
+scenarios:
+  - name: "SOS flood"
+    flow:
+      - function: "makeCitizen"
+      - post:
+          name: "POST /citizen/sos"
+          url: "/api/citizen/sos"
+          headers:
+            X-Forwarded-For: "{{ ip }}"
+          json:
+            clientId: "{{ clientId }}"
+            deviceId: "{{ deviceId }}"
+            type: "{{ type }}"
+            lat: "{{ lat }}"
+            lng: "{{ lng }}"

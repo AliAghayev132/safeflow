@@ -1,0 +1,55 @@
+{
+  "name": "crisis-engine-backend",
+  "version": "1.0.0",
+  "description": "Urban Crisis & Crowd Evacuation Engine — Express + MongoDB backend",
+  "type": "module",
+  "scripts": {
+    "dev": "nodemon app.js",
+    "start": "node app.js",
+    "seed": "node scripts/seed.js",
+    "lint": "eslint .",
+    "format": "prettier --write .",
+    "test": "npm run test:unit && npm run test:integration",
+    "test:unit": "node --test \"tests/unit/*.test.js\"",
+    "test:integration": "node --test --test-concurrency=1 --test-isolation=none \"tests/integration/*.test.js\"",
+    "test:load": "artillery run tests/load/load.yml --output tests/load/reports/load.json",
+    "test:stress": "artillery run tests/load/stress.yml --output tests/load/reports/stress.json",
+    "test:realtime": "node tests/load/realtime.mjs",
+    "test:integrity": "node tests/load/sos-integrity.mjs",
+    "test:report": "node tests/load/report.mjs"
+  },
+  "imports": {
+    "#*": "./*",
+    "#lib": "./lib/index.js",
+    "#data": "./data/index.js",
+    "#engine": "./engine/index.js",
+    "#utils": "./utils/index.js",
+    "#rules": "./rules/index.js",
+    "#models": "./models/index.js",
+    "#routes": "./routes/index.js",
+    "#config": "./config/index.js",
+    "#services": "./services/index.js",
+    "#constants": "./constants/index.js",
+    "#middlewares": "./middlewares/index.js",
+    "#controllers": "./controllers/index.js"
+  },
+  "dependencies": {
+    "bcryptjs": "^3.0.3",
+    "compression": "^1.8.2",
+    "cors": "^2.8.6",
+    "dotenv": "^18.0.10",
+    "express": "^5.3.0",
+    "express-rate-limit": "^8.7.4",
+    "helmet": "^8.3.0",
+    "jsonwebtoken": "^9.0.3",
+    "mongoose": "^9.12.1",
+    "socket.io": "^4.8.4"
+  },
+  "devDependencies": {
+    "artillery": "^2.0.34",
+    "eslint": "^10.15.0",
+    "nodemon": "^3.1.14",
+    "prettier": "^3.10.1",
+    "socket.io-client": "^4.8.4"
+  }
+}

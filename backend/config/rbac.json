@@ -1,0 +1,57 @@
+{
+  "$comment": "Roles and permissions. To add a role, add one entry under `roles`. `inherits` copies another role's permissions. `*` suffix = wildcard (e.g. `sos:*`).",
+  "roles": {
+    "citizen": {
+      "label": "role.citizen",
+      "permissions": ["sos:create", "sos:read_own", "shelter:read", "road:read", "profile:manage_own"]
+    },
+    "brigade_lead": {
+      "label": "role.brigade_lead",
+      "permissions": [
+        "dashboard:view",
+        "sos:read",
+        "alert:read",
+        "brigade:read",
+        "brigade:update_own",
+        "shelter:read",
+        "road:read"
+      ]
+    },
+    "dispatcher": {
+      "label": "role.dispatcher",
+      "permissions": [
+        "dashboard:view",
+        "sos:read",
+        "sos:triage",
+        "sos:assign",
+        "alert:read",
+        "alert:decide",
+        "brigade:read",
+        "brigade:update",
+        "shelter:read",
+        "shelter:manage",
+        "road:read",
+        "simulation:run",
+        "rules:read",
+        "config:read"
+      ]
+    },
+    "admin": {
+      "label": "role.admin",
+      "inherits": ["dispatcher"],
+      "permissions": ["config:manage", "audit:read", "operator:read"]
+    }
+  },
+  "channels": {
+    "$comment": "Realtime channel → permission required to receive it (socket rooms + polling).",
+    "sos": "sos:read",
+    "alerts": "alert:read",
+    "brigades": "brigade:read",
+    "shelters": "shelter:read",
+    "roads": "road:read",
+    "stats": "dashboard:view",
+    "config": "config:read",
+    "scenario": "dashboard:view",
+    "system": null
+  }
+}

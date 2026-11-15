@@ -1,0 +1,1 @@
+export { MyBrigadePage } from './MyBrigadePage'

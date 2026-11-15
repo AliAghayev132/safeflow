@@ -1,0 +1,7 @@
+export { OperationsPage } from './OperationsPage'
+export { TriagePage } from './TriagePage'
+export { MyBrigadePage } from './MyBrigadePage'
+export { AlertsPage } from './AlertsPage'
+export { SheltersPage } from './SheltersPage'
+export { BrigadesPage } from './BrigadesPage'
+export { SimulationPage } from './SimulationPage'

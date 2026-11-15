@@ -1,0 +1,66 @@
+{
+  "sosCluster": {
+    "minSignals": 4,
+    "windowMs": 300000,
+    "radiusMeters": 500,
+    "cooldownMs": 600000
+  },
+  "shelter": {
+    "rerouteThreshold": 0.9,
+    "alertThreshold": 0.95,
+    "inflowWindowMs": 600000,
+    "fillWarningMinutes": 15
+  },
+  "sos": {
+    "duplicateWindowMs": 60000,
+    "spam": {
+      "deviceBurstCount": 5,
+      "deviceBurstWindowMs": 120000,
+      "ipDeviceBurstCount": 6,
+      "ipBurstWindowMs": 60000,
+      "flagScore": 50,
+      "excludeFlaggedFromClustering": true
+    }
+  },
+  "triage": {
+    "severity": { "medical": 4, "fire": 3, "collapse": 2, "flood": 1, "general": 2 },
+    "weights": {
+      "severity": 10,
+      "headcount": 3,
+      "vulnerable": 8,
+      "injuries": 6,
+      "needs": 2
+    },
+    "headcountCap": 20,
+    "autoAssignMinScore": 40
+  },
+  "routing": {
+    "providers": ["external", "graph", "straight"],
+    "weights": { "distance": 1, "occupancy": 4, "roadStatus": 2 },
+    "walkingSpeedKmh": 5,
+    "candidateShelters": 6,
+    "congestionPenalty": 2,
+    "external": {
+      "timeoutMs": 1500,
+      "failureThreshold": 3,
+      "resetTimeoutMs": 30000
+    }
+  },
+  "brigade": {
+    "speedKmh": 40,
+    "tickMs": 2000,
+    "arrivalMeters": 30
+  },
+  "events": {
+    "bufferSize": 5000
+  },
+  "rateLimits": {
+    "default": { "windowMs": 60000, "ip": 1200 },
+    "auth.login": { "windowMs": 900000, "ip": 30 },
+    "sos.create": { "windowMs": 60000, "ip": 600, "device": 20 },
+    "citizen.write": { "windowMs": 60000, "ip": 600, "device": 60 },
+    "citizen.read": { "windowMs": 60000, "ip": 1200, "device": 120 },
+    "operator": { "windowMs": 60000, "user": 900 },
+    "events.poll": { "windowMs": 60000, "ip": 1200, "device": 120, "user": 120 }
+  }
+}

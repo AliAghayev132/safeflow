@@ -1,0 +1,76 @@
+# Load test — normal and peak crisis traffic (HTTP).
+#   npm run test:load      (backend must be running; see tests/load/README.md)
+config:
+  target: "http://localhost:5000" # override: artillery run --target <url>
+  processor: "./processor.cjs"
+  http:
+    timeout: 10
+  phases:
+    - name: warmup
+      duration: 15
+      arrivalRate: 10
+    - name: normal
+      duration: 45
+      arrivalRate: 30
+    - name: peak-ramp
+      duration: 30
+      arrivalRate: 30
+      rampTo: 100
+    - name: peak
+      duration: 30
+      arrivalRate: 100
+  plugins:
+    metrics-by-endpoint:
+      useOnlyRequestNames: true
+  ensure:
+    thresholds:
+      - "http.response_time.p95": 800
+    maxErrorRate: 1
+
+scenarios:
+  - name: "SOS (one tap) + optional follow-up"
+    weight: 6
+    flow:
+      - function: "makeCitizen"
+      - post:
+          name: "POST /citizen/sos"
+          url: "/api/citizen/sos"
+          headers:
+            X-Forwarded-For: "{{ ip }}"
+          json:
+            clientId: "{{ clientId }}"
+            deviceId: "{{ deviceId }}"
+            type: "{{ type }}"
+            lat: "{{ lat }}"
+            lng: "{{ lng }}"
+          expect:
+            - statusCode: [200, 201]
+      - think: 1
+      - patch:
+          name: "PATCH /citizen/sos/:clientId"
+          url: "/api/citizen/sos/{{ clientId }}"
+          headers:
+            X-Forwarded-For: "{{ ip }}"
+          json:
+            deviceId: "{{ deviceId }}"
+            headcount: "{{ headcount }}"
+
+  - name: "Evacuation plan (weighted routing)"
+    weight: 3
+    flow:
+      - function: "makeCitizen"
+      - get:
+          name: "GET /citizen/evacuation"
+          url: "/api/citizen/evacuation?lat={{ lat }}&lng={{ lng }}&deviceId={{ deviceId }}"
+          headers:
+            X-Forwarded-For: "{{ ip }}"
+
+  - name: "Shelters list"
+    weight: 1
+    flow:
+      - function: "makeCitizen"
+      - get:
+          name: "GET /citizen/shelters"
+          url: "/api/citizen/shelters"
+          headers:
+            X-Forwarded-For: "{{ ip }}"
