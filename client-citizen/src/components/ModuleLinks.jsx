@@ -27,7 +27,7 @@ export const ModuleLinks = () => {
         <Link
           key={r.path}
           to={`/${r.path}`}
-          className="flex min-h-14 items-center gap-3 rounded-2xl border border-line bg-surface p-3 hover:bg-canvas focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+          className="flex min-h-14 items-center gap-3 rounded-3xl bg-surface p-3 hover:bg-surface-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
         >
           <Icon3D name={r.menu.icon} size={36} />
           <span className="min-w-0 flex-1">

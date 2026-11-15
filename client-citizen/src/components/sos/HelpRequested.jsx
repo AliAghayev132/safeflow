@@ -22,7 +22,7 @@ export const HelpRequested = ({ ticket }) => {
   const done = status === 'resolved' || status === 'cancelled'
 
   return (
-    <section className="rounded-3xl border border-line bg-surface px-4 pb-4 pt-5 text-center">
+    <section className="rounded-3xl bg-surface px-4 pb-4 pt-5 text-center">
       <h1 className="text-xl font-extrabold text-ink">{t('help.title')}</h1>
       <p className="mx-auto mt-1 max-w-xs text-sm text-muted">{t('help.subtitle')}</p>
 
@@ -63,7 +63,7 @@ export const HelpRequested = ({ ticket }) => {
         <button
           type="button"
           onClick={() => dispatch(clearTicket())}
-          className="flex h-12 items-center justify-center gap-2 rounded-xl border border-line-strong text-sm font-bold text-ink hover:bg-canvas"
+          className="flex h-12 items-center justify-center gap-2 rounded-xl border border-line-strong text-sm font-bold text-ink hover:bg-surface-strong"
         >
           <RotateCcw className="h-4 w-4" aria-hidden />
           {t('help.newSos')}

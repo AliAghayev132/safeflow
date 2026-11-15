@@ -51,12 +51,12 @@ export const ShelterOption = ({ shelter, distanceMeters, durationSec, isTarget =
       type={onClick ? 'button' : undefined}
       onClick={onClick}
       className={clsx(
-        'flex w-full items-start gap-3 rounded-2xl border bg-surface p-3 text-left transition-colors',
-        isTarget ? 'border-brand' : 'border-line',
-        onClick && 'hover:bg-canvas'
+        'flex w-full items-start gap-3 rounded-3xl bg-surface p-3.5 text-left transition-colors',
+        isTarget && 'ring-2 ring-brand',
+        onClick && 'hover:bg-surface-strong'
       )}
     >
-      <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-canvas">
+      <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-canvas">
         <Icon3D name={type.icon} size={30} />
       </span>
       <div className="min-w-0 flex-1">

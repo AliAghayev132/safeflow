@@ -26,7 +26,7 @@ export const SafeStatusPage = () => {
       {error && !share && <EmptyState icon="warning" title={t('safe.notFound')} />}
 
       {share && (
-        <section className="rounded-3xl border border-line bg-surface p-5 text-center">
+        <section className="rounded-3xl bg-surface p-5 text-center">
           <div className="mx-auto flex h-28 w-28 items-center justify-center rounded-full bg-safe-soft">
             <div className="flex h-20 w-20 items-center justify-center rounded-full bg-safe">
               <Icon3D name="safe" size={44} />

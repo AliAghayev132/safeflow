@@ -78,7 +78,7 @@ export const SheltersPage = () => {
             onClick={() => setFilter(f)}
             className={clsx(
               'flex min-h-12 shrink-0 items-center gap-1.5 rounded-full border px-3 text-sm font-semibold transition-colors',
-              filter === f ? 'border-brand bg-brand text-white' : 'border-line-strong bg-surface text-ink-soft hover:bg-canvas'
+              filter === f ? 'border-brand bg-brand text-white' : 'border-line-strong bg-surface text-ink-soft hover:bg-surface-strong'
             )}
           >
             <Icon3D name={f === 'all' ? 'map' : shelterTypes[f].icon} size={18} />

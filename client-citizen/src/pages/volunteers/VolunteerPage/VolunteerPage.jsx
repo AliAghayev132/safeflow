@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next'
 import { clsx } from 'clsx'
 import { FileUp, MapPin, ShieldOff, Navigation } from 'lucide-react'
 
-import { Button, Card, Icon3D, StatusBadge, PageLoader, EmptyState, EvacuationMap } from '@components'
+import { Button, Card, Icon3D, StatusBadge, PageLoader, EmptyState, EvacuationMap, Select, useConfirm } from '@components'
 import {
   baseApi,
   useGetSheltersQuery,
@@ -35,7 +35,7 @@ const VERIFICATION_META = {
   rejected: { tone: 'sos', icon: 'alert' },
 }
 
-const field = 'h-12 w-full rounded-xl border border-line-strong bg-surface px-3 text-base text-ink focus:border-brand focus:outline-none'
+const field = 'h-12 w-full rounded-full bg-surface px-3 text-base text-ink focus:border-brand focus:outline-none'
 
 /** Live updates from the device room; polling is the fallback. */
 const useVolunteerLive = () => {
@@ -134,6 +134,7 @@ const RegisterForm = ({ profile, deviceId }) => {
 
 const StatusPanel = ({ profile, deviceId }) => {
   const { t } = useTranslation()
+  const confirm = useConfirm()
   const [setAvailability, { isLoading }] = useSetVolunteerAvailabilityMutation()
   const [updateLocation, { isLoading: locating }] = useUpdateVolunteerLocationMutation()
   const [withdraw, { isLoading: withdrawing }] = useWithdrawVolunteerMutation()
@@ -182,21 +183,13 @@ const StatusPanel = ({ profile, deviceId }) => {
         <Button variant="outline" size="lg" onClick={shareLocation} loading={locating} leftIcon={<MapPin className="h-5 w-5" />}>
           {t('volunteer.shareLocation')}
         </Button>
-        <label className="block">
-          <span className="sr-only">{t('volunteer.atShelter')}</span>
-          <select
-            className={field}
-            value={profile.currentShelter ?? ''}
-            onChange={(e) => updateLocation({ deviceId, shelterId: e.target.value || null })}
-          >
-            <option value="">{t('volunteer.atShelter')}</option>
-            {shelters.map((s) => (
-              <option key={s.id} value={s.id}>
-                {s.name}
-              </option>
-            ))}
-          </select>
-        </label>
+        <Select
+          label={t('volunteer.atShelter')}
+          placeholder={t('volunteer.atShelter')}
+          value={profile.currentShelter ?? ''}
+          onChange={(v) => updateLocation({ deviceId, shelterId: v || null })}
+          options={[{ value: '', label: t('volunteer.noShelter', { defaultValue: '—' }) }, ...shelters.map((s) => ({ value: s.id, label: s.name }))]}
+        />
       </div>
       <p className="text-xs text-muted">{t('volunteer.locationPrivacy')}</p>
 
@@ -234,7 +227,10 @@ const StatusPanel = ({ profile, deviceId }) => {
         fullWidth
         loading={withdrawing}
         leftIcon={<ShieldOff className="h-4 w-4" />}
-        onClick={() => window.confirm(t('volunteer.withdrawConfirm')) && withdraw(deviceId)}
+        onClick={async () =>
+          (await confirm({ message: t('volunteer.withdrawConfirm'), tone: 'danger', confirmLabel: t('volunteer.withdraw') })) &&
+          withdraw(deviceId)
+        }
       >
         {t('volunteer.withdraw')}
       </Button>

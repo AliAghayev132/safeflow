@@ -54,13 +54,13 @@ export const SosPage = () => {
   const live = ticket && !['resolved', 'cancelled'].includes(ticket.status)
 
   return (
-    <div className="mx-auto max-w-xl space-y-3">
+    <div className="mx-auto max-w-xl space-y-5">
       <LocationHeader />
 
       {/* Always-mounted live region so screen readers announce the outcome */}
       <div role="status" aria-live="assertive" aria-atomic="true">
         {feedback && (
-          <div className={clsx('animate-slide-down rounded-2xl px-4 py-3 text-sm font-bold', FEEDBACK_TONE[feedback.status])}>
+          <div className={clsx('animate-slide-down rounded-3xl px-5 py-4 text-sm font-bold', FEEDBACK_TONE[feedback.status])}>
             {feedback.text}
           </div>
         )}
@@ -72,16 +72,16 @@ export const SosPage = () => {
           {live && <SosSignalPanel compact />}
           {live && <VoiceSosButton onSend={handleSend} />}
           {live && <FollowUpForm key={ticket.clientId} ticket={ticket} />}
-          <section className="rounded-3xl border border-line bg-surface p-4">
+          <section className="rounded-3xl bg-surface p-4">
             <h2 className="mb-3 text-base font-extrabold text-ink">{t('guide.title')}</h2>
             <GuideBlock type={ticket.type} />
           </section>
         </>
       ) : (
         <>
-          <section className="rounded-3xl border border-line bg-surface px-4 pb-4 pt-5">
-            <h1 className="text-2xl font-extrabold leading-tight text-ink">{t('sos.question')}</h1>
-            <p className="mt-1.5 text-sm font-medium text-ink-soft">{t('sos.intro')}</p>
+          <section className="px-1 pt-2">
+            <h1 className="text-[28px] font-extrabold leading-[1.1] tracking-tight text-ink">{t('sos.question')}</h1>
+            <p className="mt-2 text-sm font-medium text-muted">{t('sos.intro')}</p>
             <SosButton onPress={() => handleSend('general')} sending={sendingType === 'general'} disabled={Boolean(sendingType)} />
           </section>
 

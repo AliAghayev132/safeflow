@@ -9,17 +9,17 @@ import { Spinner } from '@components/ui'
 export const SosButton = ({ onPress, sending, disabled }) => {
   const { t } = useTranslation()
   return (
-    <div className="flex justify-center py-2">
-      <div className="flex h-64 w-64 items-center justify-center rounded-full bg-[#f1f2f5] sm:h-72 sm:w-72">
-        <div className="flex h-[88%] w-[88%] items-center justify-center rounded-full border border-line bg-surface">
+    <div className="flex justify-center py-3">
+      <div className="flex h-64 w-64 items-center justify-center rounded-full bg-sos-soft sm:h-72 sm:w-72">
+        <div className="flex h-[86%] w-[86%] items-center justify-center rounded-full bg-[#fbd5da]">
           <button
             type="button"
             onClick={onPress}
             disabled={disabled}
             aria-label={`${t('sos.button')} — ${t('sos.buttonHint')}`}
             className={clsx(
-              'flex h-[82%] w-[82%] flex-col items-center justify-center rounded-full text-white transition-transform',
-              'border-[6px] border-[#f6c3cc] bg-sos active:scale-95 hover:bg-sos-hover',
+              'flex h-[84%] w-[84%] flex-col items-center justify-center rounded-full bg-sos text-white transition-transform',
+              'active:scale-95 hover:bg-sos-hover',
               'focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-sos focus-visible:ring-offset-4',
               'disabled:cursor-not-allowed disabled:opacity-80'
             )}
@@ -29,7 +29,7 @@ export const SosButton = ({ onPress, sending, disabled }) => {
             ) : (
               <span className="text-6xl font-extrabold tracking-wide">{t('sos.button')}</span>
             )}
-            <span className="mt-1 px-4 text-center text-xs font-semibold text-white/90">
+            <span className="mt-1 px-5 text-center text-xs font-semibold text-white/90">
               {sending ? t('sos.sending') : t('sos.buttonHint')}
             </span>
           </button>

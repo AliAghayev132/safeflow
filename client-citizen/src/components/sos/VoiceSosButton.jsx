@@ -63,8 +63,8 @@ export const VoiceSosButton = ({ onSend }) => {
         onClick={handle}
         aria-pressed={listening}
         className={clsx(
-          'flex min-h-14 w-full items-center justify-center gap-2 rounded-2xl border-2 text-base font-extrabold transition-colors',
-          listening ? 'border-sos bg-sos text-white' : 'border-ink bg-ink text-white hover:bg-ink-soft'
+          'flex min-h-14 w-full items-center justify-center gap-2 rounded-full text-base font-extrabold transition-colors',
+          listening ? 'bg-sos text-white' : 'bg-ink text-white hover:bg-ink-soft'
         )}
       >
         {listening ? <Square className="h-5 w-5" aria-hidden /> : <Mic className="h-5 w-5" aria-hidden />}

@@ -1,5 +1,6 @@
 import { useTranslation } from 'react-i18next'
 import { clsx } from 'clsx'
+import { ArrowUpRight } from 'lucide-react'
 import { Icon3D, Spinner } from '@components/ui'
 import { sosTypes } from '@constants'
 
@@ -8,11 +9,15 @@ export const SosTypeGrid = ({ onSend, sendingType }) => {
   const { t } = useTranslation()
   return (
     <section aria-labelledby="sos-types-title">
-      <h2 id="sos-types-title" className="text-base font-extrabold text-ink">
-        {t('sos.whatEmergency')}
-      </h2>
-      <p className="mb-2 text-xs font-medium text-muted">{t('sos.typeHint')}</p>
-      <div className="grid grid-cols-2 gap-2.5">
+      <div className="mb-3 flex items-end justify-between gap-3">
+        <div>
+          <h2 id="sos-types-title" className="text-lg font-extrabold tracking-tight text-ink">
+            {t('sos.whatEmergency')}
+          </h2>
+          <p className="text-xs font-medium text-muted">{t('sos.typeHint')}</p>
+        </div>
+      </div>
+      <div className="grid grid-cols-2 gap-3">
         {sosTypes.map((type) => {
           const sending = sendingType === type.value
           return (
@@ -22,23 +27,27 @@ export const SosTypeGrid = ({ onSend, sendingType }) => {
               disabled={Boolean(sendingType)}
               onClick={() => onSend(type.value)}
               className={clsx(
-                'flex min-h-16 items-center gap-3 rounded-2xl border-2 px-3 py-3 text-left transition-colors',
+                'group relative flex min-h-32 flex-col justify-between rounded-3xl p-4 text-left transition-colors',
                 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sos focus-visible:ring-offset-2',
-                sending
-                  ? 'border-sos bg-sos text-white'
-                  : 'border-line-strong bg-surface text-ink hover:border-sos active:bg-sos-soft',
+                sending ? 'bg-sos text-white' : 'bg-surface text-ink hover:bg-surface-strong active:bg-sos-soft',
                 sendingType && !sending && 'opacity-60'
               )}
             >
-              <span
-                className={clsx(
-                  'flex h-12 w-12 shrink-0 items-center justify-center rounded-full',
-                  sending ? 'bg-white' : 'bg-ink'
-                )}
-              >
-                {sending ? <Spinner className="h-5 w-5 text-sos" /> : <Icon3D name={type.icon} size={28} />}
+              <span className="flex w-full items-start justify-between">
+                <span className="flex h-14 w-14 items-center justify-center rounded-full bg-canvas">
+                  {sending ? <Spinner className="h-6 w-6 text-sos" /> : <Icon3D name={type.icon} size={34} />}
+                </span>
+                <span
+                  className={clsx(
+                    'flex h-9 w-9 items-center justify-center rounded-full transition-colors',
+                    sending ? 'bg-white/20 text-white' : 'bg-canvas text-ink group-hover:bg-ink group-hover:text-white'
+                  )}
+                  aria-hidden
+                >
+                  <ArrowUpRight className="h-4 w-4" />
+                </span>
               </span>
-              <span className="text-base font-extrabold leading-tight">{t(`sos.types.${type.value}`)}</span>
+              <span className="mt-3 text-base font-extrabold leading-tight">{t(`sos.types.${type.value}`)}</span>
             </button>
           )
         })}

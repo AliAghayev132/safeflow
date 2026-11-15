@@ -54,13 +54,13 @@ export const EvacuationPage = () => {
         {planArgs && <AccessibleRoutePanel plan={plan} />}
 
         {!planArgs && (
-          <div className="rounded-2xl border border-line bg-surface">
+          <div className="rounded-3xl bg-surface">
             <EmptyState icon="compass" title={t('evacuation.emptyTitle')} description={t('evacuation.emptyDesc')} />
           </div>
         )}
 
         {planArgs && isFetching && !plan && (
-          <div className="flex items-center justify-center gap-2 rounded-2xl border border-line bg-surface p-6 text-sm font-medium text-muted">
+          <div className="flex items-center justify-center gap-2 rounded-3xl bg-surface p-6 text-sm font-medium text-muted">
             <Spinner className="h-4 w-4 text-brand" /> {t('evacuation.computing')}
           </div>
         )}
@@ -70,7 +70,7 @@ export const EvacuationPage = () => {
         )}
 
         {planArgs && plan && !recommended && (
-          <div className="rounded-2xl border border-line bg-surface">
+          <div className="rounded-3xl bg-surface">
             <EmptyState icon="warning" title={t('evacuation.noShelterTitle')} description={t('evacuation.noShelterDesc')} />
           </div>
         )}
@@ -108,7 +108,7 @@ export const EvacuationPage = () => {
         )}
         <Link
           to="/shelters"
-          className="flex h-12 items-center justify-center gap-2 rounded-xl border border-line-strong bg-surface text-sm font-bold text-ink hover:bg-canvas"
+          className="flex h-12 items-center justify-center gap-2 rounded-full bg-surface text-sm font-bold text-ink hover:bg-surface-strong"
         >
           <List className="h-4 w-4" aria-hidden /> {t('evacuation.allShelters')}
         </Link>

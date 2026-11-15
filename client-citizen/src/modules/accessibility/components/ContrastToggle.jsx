@@ -24,8 +24,8 @@ export const ContrastToggle = ({ className }) => {
       aria-label={t('a11y.contrast.toggle')}
       title={on ? t('a11y.contrast.on') : t('a11y.contrast.off')}
       className={clsx(
-        'flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border-2 transition-colors',
-        on ? 'border-ink bg-ink text-white' : 'border-line-strong bg-surface text-ink hover:bg-canvas',
+        'flex h-12 w-12 shrink-0 items-center justify-center rounded-full transition-colors',
+        on ? 'bg-ink text-white' : 'bg-surface text-ink hover:bg-surface-strong',
         className
       )}
     >

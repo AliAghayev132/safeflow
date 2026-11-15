@@ -7,7 +7,7 @@ import { emergencyNumbers } from '@constants'
 export const EmergencyNumbers = () => {
   const { t } = useTranslation()
   return (
-    <section className="rounded-3xl border border-line bg-surface p-4">
+    <section className="rounded-3xl bg-surface p-4">
       <h2 className="text-base font-extrabold text-ink">{t('guide.numbersTitle')}</h2>
       <ul className="mt-3 grid grid-cols-2 gap-2">
         {emergencyNumbers.map((n) => (

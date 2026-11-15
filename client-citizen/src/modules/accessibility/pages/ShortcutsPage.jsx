@@ -43,7 +43,7 @@ const CopyField = ({ id, label, value }) => {
           type="button"
           onClick={copy}
           aria-label={`${t('a11y.shortcuts.copy')}: ${label}`}
-          className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border-2 border-line-strong bg-surface text-ink hover:bg-canvas focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+          className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border-2 border-line-strong bg-surface text-ink hover:bg-surface-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
         >
           {copied ? <Check className="h-5 w-5 text-safe" aria-hidden /> : <Copy className="h-5 w-5" aria-hidden />}
         </button>

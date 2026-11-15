@@ -1,8 +1,9 @@
 import { useTranslation } from 'react-i18next'
 import { useDispatch, useSelector } from 'react-redux'
-import { Crosshair, MapPinned } from 'lucide-react'
+import { clsx } from 'clsx'
+import { Crosshair, MapPin, MapPinned } from 'lucide-react'
 
-import { Button, Icon3D } from '@components/ui'
+import { Spinner } from '@components/ui'
 import { useGeolocation } from '@hooks'
 import { useGetZonesQuery } from '@store/api'
 import { setOrigin, setZone, selectSession } from '@store/slices'
@@ -10,7 +11,8 @@ import { CITY_CENTER, SERVICE_RADIUS_METERS } from '@constants'
 import { distanceMeters } from '@utils'
 
 /**
- * Where the citizen is: GPS, district select, or a tap on the map.
+ * Where the citizen is: GPS (round black button), district chips (no
+ * native <select>), or a tap on the map.
  */
 export const LocationBar = () => {
   const { t } = useTranslation()
@@ -36,50 +38,71 @@ export const LocationBar = () => {
       : origin
         ? t(`evacuation.source.${originSource}`)
         : t('evacuation.notSelected')
+  const selectedZone = originSource === 'zone' ? zoneCode : null
 
   return (
-    <div className="rounded-2xl border border-line bg-surface p-3">
-      <div className="flex items-center gap-3">
-        <Icon3D name="pin" size={36} />
-        <div className="min-w-0 flex-1">
-          <p className="text-xs font-semibold uppercase tracking-wide text-muted">{t('evacuation.location')}</p>
+    <div className="space-y-3">
+      {/* Location pill + GPS button */}
+      <div className="flex h-16 items-center gap-3 rounded-full bg-surface pl-4 pr-2">
+        <MapPin className="h-5 w-5 shrink-0 text-sos" aria-hidden />
+        <div className="min-w-0 flex-1 leading-tight">
+          <p className="text-[11px] font-semibold text-muted">{t('evacuation.location')}</p>
           <p className="truncate text-sm font-bold text-ink">{label}</p>
         </div>
-        <Button
-          size="sm"
-          variant={originSource === 'gps' ? 'outline' : 'primary'}
+        <button
+          type="button"
           onClick={handleLocate}
-          loading={loading}
-          leftIcon={<Crosshair className="h-4 w-4" />}
+          disabled={loading}
+          aria-label={t('evacuation.findMe')}
+          title={t('evacuation.findMe')}
+          className={clsx(
+            'flex h-12 shrink-0 items-center justify-center gap-2 rounded-full px-4 text-sm font-bold transition-colors',
+            'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink focus-visible:ring-offset-2 disabled:opacity-70',
+            originSource === 'gps' ? 'bg-canvas text-ink' : 'bg-ink text-white hover:bg-ink-soft'
+          )}
         >
-          {t('evacuation.findMe')}
-        </Button>
+          {loading ? <Spinner className="h-4 w-4" /> : <Crosshair className="h-4 w-4" aria-hidden />}
+          <span className="hidden min-[380px]:inline">{t('evacuation.findMe')}</span>
+        </button>
       </div>
 
-      <div className="mt-3 flex items-center gap-2">
-        <label htmlFor="zone-select" className="sr-only">
+      {/* District chips */}
+      <div>
+        <p id="zone-chips-label" className="mb-2 flex items-center gap-1.5 px-1 text-xs font-semibold text-muted">
           {t('evacuation.chooseZone')}
-        </label>
-        <select
-          id="zone-select"
-          value={originSource === 'zone' ? (zoneCode ?? '') : ''}
-          onChange={(e) => e.target.value && dispatch(setZone(e.target.value))}
-          className="h-12 min-w-0 flex-1 rounded-xl border border-line-strong bg-surface px-3 text-sm font-medium text-ink focus:border-brand focus:outline-none"
+          <span className="hidden items-center gap-1 sm:inline-flex">
+            · <MapPinned className="h-3.5 w-3.5" aria-hidden /> {t('evacuation.orTapMap')}
+          </span>
+        </p>
+        <div
+          role="radiogroup"
+          aria-labelledby="zone-chips-label"
+          className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
         >
-          <option value="">{t('evacuation.chooseZone')}</option>
-          {zones.map((z) => (
-            <option key={z.code} value={z.code}>
-              {z.name}
-            </option>
-          ))}
-        </select>
-        <span className="hidden items-center gap-1 text-xs text-muted sm:flex">
-          <MapPinned className="h-3.5 w-3.5" /> {t('evacuation.orTapMap')}
-        </span>
+          {zones.map((z) => {
+            const on = selectedZone === z.code
+            return (
+              <button
+                key={z.code}
+                type="button"
+                role="radio"
+                aria-checked={on}
+                onClick={() => dispatch(setZone(z.code))}
+                className={clsx(
+                  'h-12 shrink-0 rounded-full px-5 text-sm font-semibold transition-colors',
+                  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink focus-visible:ring-offset-2',
+                  on ? 'bg-ink text-white' : 'bg-surface text-ink hover:bg-surface-strong'
+                )}
+              >
+                {z.name}
+              </button>
+            )
+          })}
+        </div>
       </div>
 
       {errorKey && (
-        <p className="mt-2 rounded-lg bg-warn-soft px-3 py-2 text-xs font-medium text-warn">
+        <p role="status" className="rounded-2xl bg-warn-soft px-4 py-3 text-xs font-medium text-warn">
           {errorKey === 'outOfArea' ? t('evacuation.outOfArea') : t(`evacuation.geo.${errorKey}`)}
         </p>
       )}

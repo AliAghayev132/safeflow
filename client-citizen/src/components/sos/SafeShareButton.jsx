@@ -58,7 +58,7 @@ export const SafeShareButton = () => {
   }
 
   return (
-    <div className="rounded-2xl border border-line bg-surface p-3">
+    <div className="rounded-3xl bg-safe-soft p-3">
       <Button variant="safe" size="lg" fullWidth loading={isLoading} onClick={handle} className="min-h-14 text-base">
         <Icon3D name="safe" size={26} />
         {t('sos.safe')}
@@ -66,7 +66,7 @@ export const SafeShareButton = () => {
       <p className="mt-1.5 text-center text-xs font-medium text-muted">{t('sos.safeHint')}</p>
 
       {share && (
-        <div className="mt-3 flex items-center gap-2 rounded-xl bg-safe-soft p-2">
+        <div className="mt-3 flex items-center gap-2 rounded-full bg-canvas p-1.5 pl-3">
           <Share2 className="h-4 w-4 shrink-0 text-safe" aria-hidden />
           <span className="min-w-0 flex-1 truncate text-xs font-semibold text-safe">{share.url}</span>
           <Button size="sm" variant="outline" onClick={copy} leftIcon={<Copy className="h-3.5 w-3.5" />}>

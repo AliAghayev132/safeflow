@@ -17,7 +17,7 @@ const Toggle = ({ active, onClick, children }) => (
     onClick={onClick}
     className={clsx(
       'flex min-h-12 items-center gap-1.5 rounded-xl border-2 px-3 text-sm font-bold transition-colors',
-      active ? 'border-brand bg-brand text-white' : 'border-line-strong bg-surface text-ink hover:bg-canvas'
+      active ? 'border-brand bg-brand text-white' : 'border-line-strong bg-surface text-ink hover:bg-surface-strong'
     )}
   >
     {active && <Check className="h-4 w-4" aria-hidden />}
@@ -65,7 +65,7 @@ export const FollowUpForm = ({ ticket }) => {
   if (['resolved', 'cancelled'].includes(ticket.status)) return null
 
   return (
-    <section className="rounded-3xl border border-line bg-surface p-4">
+    <section className="rounded-3xl bg-surface p-4">
       <h2 className="text-base font-extrabold text-ink">{t('help.followTitle')}</h2>
       <p className="mt-0.5 text-xs text-muted">{t('help.followHint')}</p>
 

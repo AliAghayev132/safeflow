@@ -20,7 +20,7 @@ export const GuideSteps = ({ value, onChange, highlight }) => {
             onClick={() => onChange(d.value)}
             className={clsx(
               'flex min-h-20 flex-col items-center justify-center gap-1 rounded-2xl border-2 px-1 text-xs font-extrabold transition-colors',
-              value === d.value ? 'border-ink bg-ink text-white' : 'border-line-strong bg-surface text-ink hover:bg-canvas'
+              value === d.value ? 'border-ink bg-ink text-white' : 'border-line-strong bg-surface text-ink hover:bg-surface-strong'
             )}
           >
             <Icon3D name={d.icon} size={30} />
