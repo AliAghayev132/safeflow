@@ -7,8 +7,9 @@
  */
 export const aiDefaults = {
   llm: {
-    provider: "auto", // auto | anthropic | local | mock
+    provider: "auto", // auto | anthropic | gemini | local | mock
     model: "claude-opus-5-5",
+    geminiModel: "gemini-2.5-flash",
     effort: "low",
     maxTokens: 2048,
     timeoutMs: 20000,
@@ -20,7 +21,7 @@ export const aiDefaults = {
     maxAudioBytes: 8388608,
   },
   vision: {
-    provider: "auto", // auto | yolo | anthropic | mock
+    provider: "auto", // auto | yolo | anthropic | gemini | mock
     minConfidence: 0.4,
     timeoutMs: 20000,
     maxImageBytes: 8388608,

@@ -1,4 +1,5 @@
 import { ConfigService } from "#services/ConfigService.js";
+import { SecretStore } from "./SecretStore.js";
 
 /**
  * AI provider resolution.
@@ -16,11 +17,13 @@ import { ConfigService } from "#services/ConfigService.js";
  *   "mock" → always mock (demo / offline)
  *   explicit name → that provider (falls back to mock if not configured)
  */
-const env = (k) => (process.env[k] ?? "").trim();
+// Dashboard-entered secrets override .env (SecretStore)
+const env = (k) => SecretStore.get(k);
 
 export const AVAILABLE = {
   llm: {
     anthropic: () => Boolean(env("ANTHROPIC_API_KEY") || env("ANTHROPIC_AUTH_TOKEN")),
+    gemini: () => Boolean(env("GEMINI_API_KEY")),
     local: () => Boolean(env("AI_LOCAL_URL")),
   },
   stt: {
@@ -30,6 +33,7 @@ export const AVAILABLE = {
   vision: {
     yolo: () => Boolean(env("VISION_YOLO_URL")),
     anthropic: () => Boolean(env("ANTHROPIC_API_KEY") || env("ANTHROPIC_AUTH_TOKEN")),
+    gemini: () => Boolean(env("GEMINI_API_KEY")),
   },
 };
 
@@ -49,6 +53,8 @@ export const endpoints = {
   stt: () => (env("STT_BASE_URL") || "https://api.openai.com/v1").replace(/\/$/, ""),
   sttKey: () => env("STT_API_KEY") || env("OPENAI_API_KEY"),
   yolo: () => env("VISION_YOLO_URL").replace(/\/$/, ""),
+  anthropicKey: () => env("ANTHROPIC_API_KEY"),
+  geminiKey: () => env("GEMINI_API_KEY"),
 };
 
 /** Status for the admin panel (no secrets). */

@@ -184,3 +184,22 @@ describe("AI — latency under concurrent load (< 300 ms)", () => {
     }
   });
 });
+
+describe("AI — provider keys from the dashboard", () => {
+  test("admin stores a Gemini key: encrypted, never returned, provider switches; dispatcher cannot set", async () => {
+    assert.equal((await api("PUT", "/ai/keys/GEMINI_API_KEY", { token: dispatcher.accessToken, body: { value: "x" } })).status, 403);
+    const r = await api("PUT", "/ai/keys/GEMINI_API_KEY", { token: admin.accessToken, body: { value: "test-gemini-key-1234" } });
+    assert.equal(r.status, 200);
+    const row = r.data.keys.find((k) => k.name === "GEMINI_API_KEY");
+    assert.equal(row.preview, "…1234");
+    assert.ok(!JSON.stringify(r.body).includes("test-gemini-key"));
+    assert.equal(r.data.providers.llm.active, "gemini");
+    const { default: mongoose } = await import("mongoose");
+    const doc = await mongoose.connection.collection("aisecrets").findOne({ name: "GEMINI_API_KEY" });
+    assert.ok(doc && !JSON.stringify(doc).includes("test-gemini-key"), "stored encrypted");
+    // remove → back to mock
+    const del = await api("DELETE", "/ai/keys/GEMINI_API_KEY", { token: admin.accessToken });
+    assert.equal(del.data.providers.llm.active, "mock");
+    assert.equal((await api("PUT", "/ai/keys/NOPE", { token: admin.accessToken, body: { value: "a" } })).status, 400);
+  });
+});

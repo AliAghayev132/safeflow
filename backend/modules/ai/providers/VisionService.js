@@ -101,8 +101,9 @@ class VisionService {
         };
       }
 
-      if (provider === "anthropic") {
+      if (provider === "anthropic" || provider === "gemini") {
         const result = await LlmService.structured({
+          provider,
           task: "damage_assessment",
           system:
             "You assess disaster damage in photos (citizen or drone imagery) for an emergency dispatcher. " +

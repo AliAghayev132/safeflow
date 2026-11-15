@@ -4,6 +4,7 @@ import { asyncHandler, ok, AppError, requireDeviceId, optionalCoords, requireCoo
 import { authenticate, authorize, identifyDevice, rateLimitFor } from "#middlewares";
 import { ConfigService } from "#services/ConfigService.js";
 import { providerStatus } from "./providers/settings.js";
+import { SecretStore } from "./providers/SecretStore.js";
 import { audit, decodeBase64 } from "./common.js";
 import { VoiceSosService } from "./voice/VoiceSosService.js";
 import { DamageService } from "./damage/DamageService.js";
@@ -31,6 +32,34 @@ StatusRouter.get(
       model: aiCfg().llm.model,
       features: Object.fromEntries(Object.entries(features).filter(([k]) => k === "ai" || k.startsWith("ai"))),
     });
+  }),
+);
+
+// ================================================================ keys
+/**
+ * AI provider keys / URLs entered in the dashboard (encrypted at rest,
+ * never returned — only "…last4"). PUT/DELETE need config:manage.
+ */
+export const KeysRouter = Router();
+KeysRouter.use(...staff);
+KeysRouter.get("/", authorize("ai:status"), asyncHandler(async (_req, res) => ok(res, { keys: SecretStore.list() })));
+KeysRouter.put(
+  "/:name",
+  authorize("config:manage"),
+  asyncHandler(async (req, res) => {
+    await SecretStore.set(req.params.name, req.body?.value, req.operator);
+    // The key itself is never written to the audit log
+    await audit(req, "ai.key.set", { type: "ai_key", id: req.params.name, label: req.params.name });
+    return ok(res, { keys: SecretStore.list(), providers: providerStatus() }, "Yadda saxlanıldı");
+  }),
+);
+KeysRouter.delete(
+  "/:name",
+  authorize("config:manage"),
+  asyncHandler(async (req, res) => {
+    await SecretStore.remove(req.params.name);
+    await audit(req, "ai.key.remove", { type: "ai_key", id: req.params.name, label: req.params.name });
+    return ok(res, { keys: SecretStore.list(), providers: providerStatus() }, "Silindi");
   }),
 );
 
@@ -62,11 +91,12 @@ VoiceRouter.post(
       language: lang(b.language),
       ip: req.ip,
     });
-    await audit(req, "ai.voice_sos", { type: "sos", id: result.sos.id, label: result.sos.type }, {
+    // Not awaited: the SOS response must not wait for the audit write
+    audit(req, "ai.voice_sos", { type: "sos", id: result.sos.id, label: result.sos.type }, {
       priority: result.parsed?.priority ?? null,
       enrichment: result.enrichment,
       audio: Boolean(audio),
-    });
+    }).catch(() => null);
     return ok(res, result, "SOS göndərildi", result.duplicate ? 200 : 201, "VOICE_SOS_CREATED");
   }),
 );

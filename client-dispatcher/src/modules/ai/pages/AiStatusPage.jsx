@@ -3,6 +3,7 @@ import { CircleCheck, Minus } from 'lucide-react'
 import { Card, Icon3D, PageLoader, EmptyState, Badge, StatusBadge } from '@components'
 import { useGetAiStatusQuery } from '../api'
 import { ProviderBadge } from '../shared'
+import { AiKeysCard } from './AiKeysCard'
 
 /**
  * Which provider each AI capability uses right now (real model or demo
@@ -24,6 +25,8 @@ export const AiStatusPage = () => {
           <p className="text-xs text-muted">{t('ai.status.subtitle')}</p>
         </div>
       </Card>
+
+      <AiKeysCard />
 
       <div className="grid gap-4 lg:grid-cols-3">
         {Object.entries(data.providers).map(([cap, p]) => (

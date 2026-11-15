@@ -2,13 +2,26 @@ import { baseApi, API_ORIGIN } from '@store/api/baseApi'
 
 /** AI module endpoints (/api/ai/*, one feature flag per capability). */
 export const aiApi = baseApi
-  .enhanceEndpoints({ addTagTypes: ['AiForecast', 'AiDamage', 'AiPlan', 'AiStatus'] })
+  .enhanceEndpoints({ addTagTypes: ['AiForecast', 'AiDamage', 'AiPlan', 'AiStatus', 'AiKeys'] })
   .injectEndpoints({
     endpoints: (builder) => ({
       getAiStatus: builder.query({
         query: () => '/ai/status',
         transformResponse: (res) => res.data,
         providesTags: ['AiStatus'],
+      }),
+      getAiKeys: builder.query({
+        query: () => '/ai/keys',
+        transformResponse: (res) => res.data.keys,
+        providesTags: ['AiKeys'],
+      }),
+      setAiKey: builder.mutation({
+        query: ({ name, value }) => ({ url: `/ai/keys/${name}`, method: 'PUT', body: { value } }),
+        invalidatesTags: ['AiKeys', 'AiStatus'],
+      }),
+      removeAiKey: builder.mutation({
+        query: (name) => ({ url: `/ai/keys/${name}`, method: 'DELETE' }),
+        invalidatesTags: ['AiKeys', 'AiStatus'],
       }),
       getForecast: builder.query({
         query: () => '/ai/forecast',
@@ -64,6 +77,9 @@ export const aiApi = baseApi
 
 export const {
   useGetAiStatusQuery,
+  useGetAiKeysQuery,
+  useSetAiKeyMutation,
+  useRemoveAiKeyMutation,
   useGetForecastQuery,
   useRefreshForecastMutation,
   useGetDamageQuery,

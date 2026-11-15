@@ -1,9 +1,10 @@
 import { config } from "#config";
 import { aiDefaults } from "./defaults.js";
-import { StatusRouter, VoiceRouter, DamageRouter, ForecastRouter, ChatRouter, SupplyPlanRouter } from "./routes.js";
+import { StatusRouter, KeysRouter, VoiceRouter, DamageRouter, ForecastRouter, ChatRouter, SupplyPlanRouter } from "./routes.js";
 import { ForecastService } from "./forecast/ForecastService.js";
 import { SupplyPlanService } from "./supply/SupplyPlanService.js";
 import { DamageAssessment } from "./damage/damageAssessment.model.js";
+import { SecretStore } from "./providers/SecretStore.js";
 
 /**
  * AI feature modules. Shared provider layer (providers/): LLM (Claude /
@@ -24,7 +25,12 @@ const core = {
   name: "ai",
   feature: "ai",
   defaults: aiDefaults,
-  routers: [{ path: "/ai/status", router: StatusRouter }],
+  routers: [
+    { path: "/ai/status", router: StatusRouter },
+    { path: "/ai/keys", router: KeysRouter },
+  ],
+  // Dashboard-entered provider keys (encrypted in MongoDB)
+  init: () => SecretStore.load(),
 };
 
 const voice = { name: "aiVoiceSos", feature: "aiVoiceSos", routers: [{ path: "/ai/voice-sos", router: VoiceRouter }] };

@@ -3,11 +3,44 @@ import { zodOutputFormat } from "@anthropic-ai/sdk/helpers/zod";
 import { z } from "zod";
 import { resolveProvider, aiConfig, endpoints } from "./settings.js";
 
+import { SecretStore } from "./SecretStore.js";
+
 let anthropicClient = null;
 const anthropic = () => {
-  // Resolves ANTHROPIC_API_KEY / ANTHROPIC_AUTH_TOKEN / ant profile from env
-  anthropicClient ??= new Anthropic({ timeout: aiConfig("llm").timeoutMs ?? 20000, maxRetries: 1 });
+  // Key from the dashboard secret store, else ANTHROPIC_API_KEY / AUTH_TOKEN from env
+  const apiKey = endpoints.anthropicKey() || undefined;
+  anthropicClient ??= new Anthropic({ ...(apiKey ? { apiKey } : {}), timeout: aiConfig("llm").timeoutMs ?? 20000, maxRetries: 1 });
   return anthropicClient;
+};
+// A new key entered in the dashboard → rebuild the client
+SecretStore.onChange((name) => {
+  if (name === "ANTHROPIC_API_KEY") anthropicClient = null;
+});
+
+// ---- Google Gemini (REST, key in a header — never in the URL) -------------
+/** Claude-style content (string or blocks) → Gemini parts. */
+const geminiParts = (content) =>
+  (typeof content === "string" ? [{ type: "text", text: content }] : content).map((b) =>
+    b.type === "image" ? { inline_data: { mime_type: b.source.media_type, data: b.source.data } } : { text: b.text },
+  );
+
+const gemini = async ({ system, contents, json }) => {
+  const cfg = aiConfig("llm");
+  const model = cfg.geminiModel ?? "gemini-2.5-flash";
+  const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "x-goog-api-key": endpoints.geminiKey() },
+    body: JSON.stringify({
+      systemInstruction: { parts: [{ text: system }] },
+      contents,
+      generationConfig: { maxOutputTokens: cfg.maxTokens ?? 2048, ...(json ? { responseMimeType: "application/json" } : {}) },
+    }),
+    signal: AbortSignal.timeout(cfg.timeoutMs ?? 20000),
+  });
+  if (!res.ok) throw new Error(`Gemini HTTP ${res.status}`);
+  const body = await res.json();
+  const text = (body.candidates?.[0]?.content?.parts ?? []).map((p) => p.text ?? "").join("").trim();
+  return { text, model };
 };
 
 const localPost = async (path, body, timeoutMs) => {
@@ -46,8 +79,8 @@ class LlmService {
    * @param {z.ZodType} p.schema  output schema
    * @param {Function} p.mock     () => data   deterministic fallback
    */
-  static async structured({ task, system, content, schema, mock }) {
-    const provider = resolveProvider("llm");
+  static async structured({ task, system, content, schema, mock, provider: forced }) {
+    const provider = forced ?? resolveProvider("llm");
     const cfg = aiConfig("llm");
     const fallback = (reason) => ({ data: mock(), provider: "mock", mock: true, model: null, fallbackReason: reason });
 
@@ -63,6 +96,18 @@ class LlmService {
         if (response.stop_reason === "refusal") return fallback("refusal");
         if (!response.parsed_output) return fallback("unparseable");
         return { data: response.parsed_output, provider, mock: false, model: response.model };
+      }
+      if (provider === "gemini") {
+        const r = await gemini({
+          system: `${system}
+Reply with ONE JSON object matching this JSON schema, no prose:
+${JSON.stringify(z.toJSONSchema(schema))}`,
+          contents: [{ role: "user", parts: geminiParts(content) }],
+          json: true,
+        });
+        const parsed = schema.safeParse(JSON.parse(r.text.replace(/^```(json)?|```$/g, "")));
+        if (!parsed.success) return fallback("gemini_invalid_output");
+        return { data: parsed.data, provider, mock: false, model: r.model };
       }
       if (provider === "local") {
         const body = await localPost(
@@ -100,6 +145,14 @@ class LlmService {
         });
         if (response.stop_reason === "refusal") return fallback("refusal");
         return { text: textOf(response), provider, mock: false, model: response.model };
+      }
+      if (provider === "gemini") {
+        const r = await gemini({
+          system,
+          contents: messages.map((m) => ({ role: m.role === "assistant" ? "model" : "user", parts: [{ text: m.content }] })),
+        });
+        if (!r.text) return fallback("gemini_empty");
+        return { text: r.text, provider, mock: false, model: r.model };
       }
       if (provider === "local") {
         const body = await localPost("/v1/chat", { task, system, messages }, cfg.timeoutMs ?? 20000);
