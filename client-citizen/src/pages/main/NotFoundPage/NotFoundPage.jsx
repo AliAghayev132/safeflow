@@ -12,7 +12,7 @@ export const NotFoundPage = () => {
       action={
         <Link
           to="/"
-          className="inline-flex h-11 items-center rounded-xl bg-brand px-4 text-sm font-semibold text-white hover:bg-brand-hover"
+          className="inline-flex h-12 items-center rounded-xl bg-brand px-4 text-sm font-semibold text-white hover:bg-brand-hover"
         >
           {t('notFound.back')}
         </Link>

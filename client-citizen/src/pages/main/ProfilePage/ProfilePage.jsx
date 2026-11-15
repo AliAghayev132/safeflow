@@ -5,6 +5,7 @@ import { Plus, Trash2 } from 'lucide-react'
 
 import { Button, Card, Icon3D, PageLoader } from '@components'
 import { ModuleLinks } from '@components/ModuleLinks'
+import { AccessibilityFields, emptyAccessibility, toAccessibility } from '@/modules/accessibility'
 import { useGetProfileQuery, useSaveProfileMutation, useDeleteProfileMutation } from '@store/api'
 import { selectDeviceId, selectIsOffline } from '@store/slices'
 import { errorMessage } from '@utils'
@@ -26,6 +27,7 @@ const EMPTY = {
   allergies: '',
   medications: '',
   emergencyContacts: [],
+  accessibility: emptyAccessibility(),
 }
 
 const toForm = (p) =>
@@ -39,6 +41,7 @@ const toForm = (p) =>
         allergies: toLines(p.allergies),
         medications: toLines(p.medications),
         emergencyContacts: p.emergencyContacts ?? [],
+        accessibility: toAccessibility(p.accessibility),
       }
     : EMPTY
 
@@ -84,6 +87,8 @@ const ProfileForm = ({ profile }) => {
         medications: fromLines(form.medications),
         emergencyContacts: form.emergencyContacts.filter((c) => c.name || c.phone),
         language: i18n.language,
+        // Special needs — attached to every SOS and raise its priority
+        accessibility: toAccessibility(form.accessibility),
       }).unwrap()
       setFeedback({ ok: true, text: t('profile.saved') })
     } catch (error) {
@@ -119,6 +124,13 @@ const ProfileForm = ({ profile }) => {
             <input id="bloodType" maxLength={4} className={inputCls} value={form.bloodType} onChange={set('bloodType')} />
           </Field>
         </div>
+      </Card>
+
+      <Card className="space-y-3">
+        <AccessibilityFields
+          value={form.accessibility}
+          onChange={(accessibility) => setForm((f) => ({ ...f, accessibility }))}
+        />
       </Card>
 
       <Card className="space-y-3">

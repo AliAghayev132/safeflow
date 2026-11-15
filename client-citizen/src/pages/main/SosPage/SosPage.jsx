@@ -14,6 +14,7 @@ import {
   GuideSteps,
 } from '@components'
 import { useSendSos } from '@hooks'
+import { SosSignalPanel, vibrateOutcome } from '@/modules/accessibility'
 import { selectActiveTicket } from '@store/slices'
 import { guideForSosType } from '@constants'
 import { errorMessage } from '@utils'
@@ -39,7 +40,8 @@ export const SosPage = () => {
     setFeedback(null)
     const res = await send(type, details)
     if (res.status === 'busy') return
-    navigator.vibrate?.(200)
+    // Distinct pattern per outcome — clear without looking at the screen
+    vibrateOutcome(res.status)
     setFeedback({
       status: res.status,
       text:
@@ -55,15 +57,19 @@ export const SosPage = () => {
     <div className="mx-auto max-w-xl space-y-3">
       <LocationHeader />
 
-      {feedback && (
-        <div role="status" className={clsx('animate-slide-down rounded-2xl px-4 py-3 text-sm font-bold', FEEDBACK_TONE[feedback.status])}>
-          {feedback.text}
-        </div>
-      )}
+      {/* Always-mounted live region so screen readers announce the outcome */}
+      <div role="status" aria-live="assertive" aria-atomic="true">
+        {feedback && (
+          <div className={clsx('animate-slide-down rounded-2xl px-4 py-3 text-sm font-bold', FEEDBACK_TONE[feedback.status])}>
+            {feedback.text}
+          </div>
+        )}
+      </div>
 
       {ticket ? (
         <>
           <HelpRequested ticket={ticket} />
+          {live && <SosSignalPanel compact />}
           {live && <VoiceSosButton onSend={handleSend} />}
           {live && <FollowUpForm key={ticket.clientId} ticket={ticket} />}
           <section className="rounded-3xl border border-line bg-surface p-4">
@@ -80,6 +86,7 @@ export const SosPage = () => {
           </section>
 
           <SosTypeGrid onSend={handleSend} sendingType={sendingType} />
+          <SosSignalPanel />
           <VoiceSosButton onSend={handleSend} />
         </>
       )}

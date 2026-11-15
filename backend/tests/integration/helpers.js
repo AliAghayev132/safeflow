@@ -38,20 +38,32 @@ const { io } = await import("socket.io-client");
 export let BASE = "";
 export let ORIGIN = "";
 
-export const boot = async () => {
-  // Fresh database per test file
-  await mongoose.connect(process.env.MONGODB_URI);
-  await mongoose.connection.dropDatabase();
-  await mongoose.disconnect();
+// Several test files run in ONE process (--test-isolation=none) and each
+// calls boot()/shutdown() from its own top-level hooks. Boot once (fresh DB),
+// share the server, stop it when the last file is done. A second boot used
+// to disconnect the running app's mongoose connection and hang every query.
+let bootPromise = null;
+let users = 0;
 
-  const { port } = await startApp({ port: 0 });
-  ORIGIN = `http://127.0.0.1:${port}`;
-  BASE = `${ORIGIN}/api`;
+export const boot = async () => {
+  users += 1;
+  bootPromise ??= (async () => {
+    await mongoose.connect(process.env.MONGODB_URI);
+    await mongoose.connection.dropDatabase();
+    await mongoose.disconnect();
+
+    const { port } = await startApp({ port: 0 });
+    ORIGIN = `http://127.0.0.1:${port}`;
+    BASE = `${ORIGIN}/api`;
+  })();
+  return bootPromise;
 };
 
 export const shutdown = async () => {
+  users -= 1;
+  if (users > 0) return;
   await stopApp();
-  await new Promise((r) => fakeServer.close(r));
+  await new Promise((r) => fakeServer.close(() => r()));
 };
 
 export const api = async (method, path, { body, token, headers = {} } = {}) => {

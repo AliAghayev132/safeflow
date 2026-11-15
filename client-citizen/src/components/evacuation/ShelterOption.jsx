@@ -27,7 +27,7 @@ export const ShelterOption = ({ shelter, distanceMeters, durationSec, isTarget =
         onClick && 'hover:bg-canvas'
       )}
     >
-      <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-canvas">
+      <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-canvas">
         <Icon3D name={type.icon} size={30} />
       </span>
       <div className="min-w-0 flex-1">

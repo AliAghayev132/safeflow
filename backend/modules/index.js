@@ -20,4 +20,6 @@
  *
  * Adding a module = create the folder and add ONE import line below.
  */
-export const modules = [];
+import accessibility from "./accessibility/index.js";
+
+export const modules = [accessibility];
