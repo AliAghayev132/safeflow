@@ -35,8 +35,8 @@ export const RouteNotice = ({ route, routing }) => {
 
   if (routing?.fallback) {
     return (
-      <p role="status" className="flex items-center gap-2 rounded-xl bg-info-soft px-3 py-2 text-xs font-semibold text-info">
-        <AlertTriangle className="h-4 w-4 shrink-0" aria-hidden />
+      <p role="status" className="flex items-start gap-3 rounded-3xl border-2 border-warn bg-warn-soft px-4 py-3 text-sm font-bold text-warn">
+        <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0" aria-hidden />
         {t('evacuation.fallbackNotice')}
       </p>
     )

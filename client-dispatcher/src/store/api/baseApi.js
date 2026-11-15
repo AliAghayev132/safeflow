@@ -34,6 +34,7 @@ const baseQueryWithAuth = async (args, api, extraOptions) => {
 
 export const ALL_TAGS = [
   'Overview',
+  'RoutingOutage',
   'Roads',
   'Rules',
   'Queue',

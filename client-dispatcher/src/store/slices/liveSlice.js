@@ -41,9 +41,13 @@ const pruneClosedSos = (sosState) => {
 const applyEventToState = (state, { type, data }) => {
   switch (type) {
     case 'sos:new':
-    case 'sos:updated':
-      sosAdapter.upsertMany(state.sos, Array.isArray(data) ? data : [data])
+    case 'sos:updated': {
+      // Spam-flagged SOS (e.g. a bot flood) never stay on the dispatcher panel
+      const list = Array.isArray(data) ? data : [data]
+      sosAdapter.removeMany(state.sos, list.filter((x) => x.spamFlagged).map((x) => x.id))
+      sosAdapter.upsertMany(state.sos, list.filter((x) => !x.spamFlagged))
       break
+    }
     case 'shelter:updated':
       sheltersAdapter.upsertOne(state.shelters, data)
       break

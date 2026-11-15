@@ -13,9 +13,32 @@ const strList = (v, max = 20) =>
  * SOS never requires it; when present it is attached to the dispatcher view.
  */
 class ProfileService {
+  // Devices whose profile says limited mobility / wheelchair → role
+  // "priority_citizen" (Challenge Drop #1). In memory: the role resolver is
+  // called on every citizen request and must be synchronous.
+  static #priorityDevices = new Set();
+
+  static isPriority(a = {}) {
+    return Boolean(a.limitedMobility || a.wheelchair);
+  }
+
+  static async loadPriorityDevices() {
+    const rows = await CitizenProfile.find(
+      { $or: [{ "accessibility.limitedMobility": true }, { "accessibility.wheelchair": true }] },
+      { deviceId: 1 },
+    ).lean();
+    ProfileService.#priorityDevices = new Set(rows.map((r) => r.deviceId));
+  }
+
+  /** RBAC device-role resolver. */
+  static roleFor(deviceId) {
+    return ProfileService.#priorityDevices.has(deviceId) ? "priority_citizen" : null;
+  }
+
   static async get(deviceId) {
     const p = await CitizenProfile.findOne({ deviceId });
-    return p?.toPublic() ?? null;
+    if (!p) return null;
+    return { ...p.toPublic(), role: ProfileService.roleFor(deviceId) ?? "citizen" };
   }
 
   /**
@@ -65,10 +88,13 @@ class ProfileService {
       { $set: set, $setOnInsert: { deviceId } },
       { upsert: true, new: true, runValidators: true },
     );
-    return p.toPublic();
+    if (ProfileService.isPriority(p.accessibility)) ProfileService.#priorityDevices.add(deviceId);
+    else ProfileService.#priorityDevices.delete(deviceId);
+    return { ...p.toPublic(), role: ProfileService.roleFor(deviceId) ?? "citizen" };
   }
 
   static async remove(deviceId) {
+    ProfileService.#priorityDevices.delete(deviceId);
     await CitizenProfile.deleteOne({ deviceId });
   }
 

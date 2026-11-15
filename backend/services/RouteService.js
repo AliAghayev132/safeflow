@@ -19,16 +19,65 @@ export const bearingDegrees = (a, b) => {
 
 const externalBreaker = new CircuitBreaker({ name: "routing.external" });
 
+/**
+ * Stand-in for the external map / routing API when ROUTING_EXTERNAL_URL is
+ * not configured (demo machine). Challenge Drop #2 is demonstrated by
+ * switching it to "503" (Service Unavailable) or "timeout" (> 5 s) from the
+ * dispatcher's simulation page; the real HTTP provider behaves the same way.
+ */
+export const ExternalApiSimulator = {
+  mode: "ok", // ok | 503 | timeout
+  get active() {
+    return !config.routing.externalUrl;
+  },
+  setMode(mode) {
+    if (!["ok", "503", "timeout"].includes(mode)) throw new Error("mode: ok | 503 | timeout");
+    this.mode = mode;
+  },
+};
+
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+/** Reject after `ms` — a hanging dependency must never hang the citizen. */
+const withTimeout = (promise, ms) =>
+  Promise.race([
+    promise,
+    sleep(ms).then(() => {
+      const error = new Error(`external routing timeout after ${ms} ms`);
+      error.code = "TIMEOUT";
+      throw error;
+    }),
+  ]);
+
 // ============ PROVIDERS ============
 
 /** 1. External OSRM-compatible API (short timeout + circuit breaker). */
 const externalProvider = {
   name: "external",
   // No barrier data from a generic routing API → never used for barrier-free routes
-  enabled: (opts) => Boolean(config.routing.externalUrl) && !opts?.accessible,
+  enabled: (opts) => (Boolean(config.routing.externalUrl) || ExternalApiSimulator.active) && !opts?.accessible,
   async route(origin, target) {
     const { timeoutMs, failureThreshold, resetTimeoutMs } = ConfigService.get("routing").external;
     externalBreaker.configure({ failureThreshold, resetTimeoutMs });
+
+    if (ExternalApiSimulator.active) {
+      return externalBreaker.exec(() =>
+        withTimeout(
+          (async () => {
+            if (ExternalApiSimulator.mode === "503") {
+              const error = new Error("external routing HTTP 503 Service Unavailable");
+              error.code = "HTTP_503";
+              throw error;
+            }
+            await sleep(ExternalApiSimulator.mode === "timeout" ? 6000 : 15);
+            const r = target.nodeId ? routingService.routeFrom(origin, target.nodeId, {}) : null;
+            if (!r) throw new Error("external routing: no route");
+            return r;
+          })(),
+          timeoutMs,
+        ),
+      );
+    }
 
     return externalBreaker.exec(async () => {
       const base = config.routing.externalUrl.replace(/\/$/, "");
@@ -145,6 +194,8 @@ class RouteService {
       providers: ConfigService.get("routing").providers,
       external: {
         configured: externalProvider.enabled(),
+        simulated: ExternalApiSimulator.active,
+        simulatorMode: ExternalApiSimulator.active ? ExternalApiSimulator.mode : null,
         breaker: externalBreaker.status(),
       },
       graph: { nodes: routingService.nodes.size, edges: routingService.edges.size },
@@ -155,6 +206,7 @@ class RouteService {
   static resetBreakers() {
     externalBreaker.state = "closed";
     externalBreaker.failures = 0;
+    ExternalApiSimulator.mode = "ok";
   }
 }
 

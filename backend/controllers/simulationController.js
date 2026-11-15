@@ -1,5 +1,6 @@
 import { sosTypes } from "#constants";
-import { SimulationService, ScenarioService, ShelterService, AuditService, RoadService } from "#services";
+import { SimulationService, ScenarioService, ShelterService, AuditService, RoadService, FloodSimulationService, RouteService } from "#services";
+import { ExternalApiSimulator } from "#services/RouteService.js";
 import { asyncHandler, ok, requireCoords, requireEnum } from "#utils";
 
 const audited = (action, fn, target = () => ({})) =>
@@ -73,6 +74,37 @@ const sosWave = audited("sos_wave", async (req) => {
   return { data: { sos }, details: params, status: 201, code: "SOS_WAVE_CREATED" };
 });
 
+/**
+ * POST /api/simulation/sos-flood { attack?, genuine? }
+ * Challenge Drop #3: 500+ fake SOS against the real endpoint + genuine
+ * citizens at the same time; returns what each protection layer did and the
+ * average / p95 response time.
+ */
+const sosFlood = audited("sos_flood", async (req) => {
+  const attack = Math.max(100, Math.min(2000, Number(req.body?.attack) || 600));
+  const genuine = Math.max(5, Math.min(100, Number(req.body?.genuine) || 20));
+  const report = await FloodSimulationService.run({ attack, genuine });
+  return { data: { report }, details: { attack, genuine, latency: report.latency, genuineAccepted: report.genuine.accepted }, code: "SOS_FLOOD_DONE" };
+});
+
+/** GET /api/simulation/routing-outage — external routing API + circuit breaker state */
+const routingOutageStatus = asyncHandler(async (_req, res) => ok(res, { routing: RouteService.status() }));
+
+/**
+ * POST /api/simulation/routing-outage { mode: ok | 503 | timeout }
+ * Challenge Drop #2: the external map / routing API goes down (HTTP 503 or
+ * answers after > 5 s). Routing must keep working from the local road graph.
+ */
+const routingOutage = audited(
+  "routing_outage",
+  async (req) => {
+    const mode = requireEnum(req.body?.mode, ["ok", "503", "timeout"], "mode");
+    ExternalApiSimulator.setMode(mode);
+    return { data: { routing: RouteService.status() }, details: { mode }, code: "ROUTING_OUTAGE_SET" };
+  },
+  (req) => ({ type: "routing", id: "external", label: req.body?.mode }),
+);
+
 const reset = audited("reset", async () => {
   await SimulationService.reset();
   return { data: null, code: "SIMULATION_RESET" };
@@ -96,6 +128,9 @@ const stopScenario = audited("scenario_stop", async () => ({
 }));
 
 export {
+  sosFlood,
+  routingOutage,
+  routingOutageStatus,
   closeRoad,
   openRoad,
   closeRandomRoad,

@@ -12,6 +12,7 @@ import {
   FollowUpForm,
   VoiceSosButton,
   GuideSteps,
+  PriorityRoleBadge,
 } from '@components'
 import { useSendSos } from '@hooks'
 import { SosSignalPanel, vibrateOutcome } from '@/modules/accessibility'
@@ -57,6 +58,7 @@ export const SosPage = () => {
   return (
     <div className="stagger space-y-5">
       <LocationHeader />
+      <PriorityRoleBadge compact />
 
       {/* Always-mounted live region so screen readers announce the outcome */}
       <div role="status" aria-live="assertive" aria-atomic="true">

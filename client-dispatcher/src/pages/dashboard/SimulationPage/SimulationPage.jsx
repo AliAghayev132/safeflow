@@ -36,6 +36,7 @@ import { SOS_TYPE_KEYS } from '@constants'
 import { formatPercent, formatTime, occupancyColor } from '@utils'
 import { useCan, useThresholds } from '@hooks'
 import { CircleCheck, Ban } from 'lucide-react'
+import { FloodAttackCard, RoutingOutageCard } from './DropCards'
 
 const Range = ({ label, value, display, ...props }) => (
   <label className="flex flex-col gap-1.5">
@@ -348,6 +349,8 @@ export const SimulationPage = () => {
         </div>
 
         <aside className="space-y-4 min-w-0">
+          <FloodAttackCard />
+          <RoutingOutageCard />
           <SosWaveCard center={center} setCenter={setCenter} radius={radius} setRadius={setRadius} />
           <ShelterOccupancyCard />
           <RoadsCard />

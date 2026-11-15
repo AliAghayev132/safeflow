@@ -18,6 +18,15 @@ const fakeServer = http.createServer((req, res) => {
     res.writeHead(500).end("boom");
     return;
   }
+  if (fakeRouting.mode === "503") {
+    res.writeHead(503).end("Service Unavailable");
+    return;
+  }
+  if (fakeRouting.mode === "slow") {
+    // answers after > 5 s (Challenge Drop #2)
+    setTimeout(() => !res.writableEnded && res.writeHead(200).end("{}"), 6000).unref();
+    return;
+  }
   if (fakeRouting.mode === "hang") return; // never answers → timeout
   const m = req.url.match(/\/route\/v1\/\w+\/([\d.]+),([\d.]+);([\d.]+),([\d.]+)/);
   const [lng1, lat1, lng2, lat2] = m.slice(1).map(Number);

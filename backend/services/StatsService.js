@@ -103,6 +103,7 @@ class StatsService {
         .limit(100),
       SosSignal.find({
         $or: [{ status: { $in: ["pending", "assigned"] } }, { createdAt: { $gte: since } }],
+        spamFlagged: { $ne: true },
       })
         .sort({ createdAt: -1 })
         .limit(500),

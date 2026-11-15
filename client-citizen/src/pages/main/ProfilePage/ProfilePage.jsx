@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { useSelector } from 'react-redux'
 import { Plus, Trash2 } from 'lucide-react'
 
-import { Button, Card, Icon3D, PageLoader } from '@components'
+import { Button, Card, Icon3D, PageLoader, PriorityRoleBadge } from '@components'
 import { ModuleLinks } from '@components/ModuleLinks'
 import { AccessibilityFields, emptyAccessibility, toAccessibility } from '@/modules/accessibility'
 import { useGetProfileQuery, useSaveProfileMutation, useDeleteProfileMutation } from '@store/api'
@@ -126,6 +126,7 @@ const ProfileForm = ({ profile }) => {
         </div>
       </Card>
 
+      <PriorityRoleBadge />
       <Card className="space-y-3">
         <AccessibilityFields
           value={form.accessibility}

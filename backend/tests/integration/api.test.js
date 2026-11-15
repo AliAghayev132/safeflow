@@ -325,8 +325,12 @@ describe("Realtime replay (missed events) + polling fallback", () => {
   test("polling endpoint returns the same events, filtered by permission", async () => {
     const deviceId = uuid();
     const before = (await api("GET", "/events?after=0", { token: dispatcher.accessToken })).data.lastSeq;
-    const mine = await sendSos({ deviceId, type: "fire" });
-    await sendSos({ type: "flood" });
+    // Distinct citizen IPs: many devices from one IP would (correctly) be
+    // flagged as spam, and spam SOS are not pushed to dispatchers
+    const citizenSos = (body, ip) =>
+      api("POST", "/citizen/sos", { headers: { "X-Forwarded-For": ip }, body: { clientId: uuid(), deviceId: uuid(), ...YASAMAL, ...body } });
+    const mine = await citizenSos({ deviceId, type: "fire" }, "198.18.0.1");
+    await citizenSos({ type: "flood" }, "198.18.0.2");
     const staff = (await api("GET", `/events?after=${before}`, { token: dispatcher.accessToken })).data;
     assert.ok(staff.events.filter((e) => e.type === "sos:new").length >= 2);
 

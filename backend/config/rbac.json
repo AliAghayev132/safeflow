@@ -14,6 +14,16 @@
         "ai:chat"
       ]
     },
+    "priority_citizen": {
+      "label": "role.priority_citizen",
+      "inherits": [
+        "citizen"
+      ],
+      "permissions": [
+        "sos:priority",
+        "route:accessible"
+      ]
+    },
     "volunteer": {
       "label": "role.volunteer",
       "inherits": [

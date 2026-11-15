@@ -33,6 +33,7 @@ export { StatsService } from "./StatsService.js";
 
 // Simulation & setup
 export { SimulationService } from "./SimulationService.js";
+export { FloodSimulationService } from "./FloodSimulationService.js";
 export { ScenarioService } from "./ScenarioService.js";
 export { SeedService } from "./SeedService.js";
 export { bootstrap } from "./BootstrapService.js";

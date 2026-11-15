@@ -83,6 +83,12 @@ class SosService {
     const open = candidates[0] ?? null;
 
     if (open) {
+      // Flood fast path: repeat taps on a spam-flagged ticket only count the
+      // merge (one cheap update), no triage / recommendation / broadcast
+      if (open.spamFlagged) {
+        await SosSignal.updateOne({ _id: open._id }, { $push: { mergedClientIds: clientId } });
+        return { sos: open.toPublic(), duplicate: true, reason: "merged_repeat" };
+      }
       open.mergedClientIds.push(clientId);
       applyDetails(open, details);
       TriageService.applyPriority(open);
@@ -122,7 +128,8 @@ class SosService {
       ai,
     });
     // Profile special needs (limited mobility → Priority #1) + SOS body flags
-    const profileNeeds = await ProfileService.needs(deviceId);
+    // (skipped for spam-flagged requests — a flood must stay cheap)
+    const profileNeeds = sos.spamFlagged ? { accessibility: {} } : await ProfileService.needs(deviceId);
     applyDetails(sos, { ...details, accessibility: { ...profileNeeds.accessibility, ...(details.accessibility ?? {}) } });
     TriageService.applyPriority(sos);
     await TriageService.applyRecommendation(sos);
@@ -139,7 +146,8 @@ class SosService {
     }
 
     // Device-id rotation detected → retro-flag the burst from this IP
-    if (ip && spam.flags.includes("ip_burst")) {
+    // Only once per IP burst window — not on every request of a flood
+    if (ip && spam.flags.includes("ip_burst") && SpamTracker.claimRetroFlag(ip, now, cfg.spam.ipBurstWindowMs)) {
       const burst = await SosSignal.find({
         ip,
         spamFlagged: false,
@@ -157,7 +165,8 @@ class SosService {
     }
 
     // Citizen status is a side effect — don't hold the SOS response for it
-    Citizen.updateOne(
+    // (skipped for spam: bots must not create citizen records)
+    if (!sos.spamFlagged) Citizen.updateOne(
       { deviceId },
       {
         $set: { status: "needs_help", location, zone: zone?._id ?? null, lastSeenAt: new Date() },

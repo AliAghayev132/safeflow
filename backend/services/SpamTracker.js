@@ -38,7 +38,18 @@ class SpamTracker {
     }
   }
 
+  static #retroFlagged = new Map(); // ip → ts of the last retro-flag pass
+
+  /** true once per IP per window: the caller may run the retro-flag query. */
+  static claimRetroFlag(ip, now, windowMs) {
+    const last = SpamTracker.#retroFlagged.get(ip);
+    if (last && now - last < windowMs) return false;
+    SpamTracker.#retroFlagged.set(ip, now);
+    return true;
+  }
+
   static clear() {
+    SpamTracker.#retroFlagged.clear();
     SpamTracker.#byDevice.clear();
     SpamTracker.#byIp.clear();
   }

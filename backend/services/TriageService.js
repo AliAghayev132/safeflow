@@ -53,7 +53,8 @@ class TriageService {
 
   /** Active queue, highest priority first (then oldest). */
   static async queue({ limit = 200 } = {}) {
-    const rows = await SosSignal.find({ status: { $in: ["pending", "assigned"] } })
+    // Spam-flagged SOS stay in the DB (audit) but never reach the dispatcher queue
+    const rows = await SosSignal.find({ status: { $in: ["pending", "assigned"] }, spamFlagged: { $ne: true } })
       .sort({ priority: -1, createdAt: 1 })
       .limit(limit);
     return rows.map((s) => s.toPublic());

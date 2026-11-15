@@ -33,7 +33,7 @@
 | Testlər | Test tələblərini (unit, inteqrasiya, yük, stress) promptda dəqiqləşdirdi | Unit testlər (`node --test`), inteqrasiya testləri (API + WebSocket + MongoDB), Artillery yük/stress ssenariləri, gecikmə testi | Testlərin keçdiyini yoxladı |
 | UI / dizayn | Dizayn istəklərini (solid rənglər, 3D ikonlar, mobil-first) prompta çevirdi | Komponentlərin implementasiyası, mobil redizayn, animasiyalar, WCAG 2.1 AA düzəlişləri | Referans dizayn (Figma, nümunə ekran şəkli) verdi, nəticəni vizual yoxladı |
 | Debugging / performans | — | Dispetçerdə SOS selində donmanın profillənməsi (event batching, xəritə klasterləşməsi), reset xətası, Mongo pool, gecikmə ölçmələri | Problemləri özü tapıb bildirdi (aşağıda nümunələr) |
-| Sənədləşdirmə | Təhvil verilməli materialların siyahısını və məzmun tələblərini formalaşdırdı | README, bu bəyannamə, texniki izah (`docs/Texniki_izah.docx`), demo ssenarisi, qiymətləndirmə (`EVALUATION.md`) qaralamaları | Yoxladı və redaktə etdi |
+| Sənədləşdirmə | Təhvil verilməli materialların siyahısını və məzmun tələblərini formalaşdırdı | README, bu bəyannamə, texniki izah (`docs/Texniki_izah.docx`) qaralamaları | Yoxladı və redaktə etdi |
 
 ## 4. İnsan nəzarətinin konkret nümunələri
 
@@ -50,7 +50,7 @@ Aşağıdakılar Claude-un ilk nəticəsini komandanın yoxlayıb **dəyişdirdi
 ## 5. Nəzarət və yoxlama
 
 - **İnsan nəzarəti:** hər dəyişiklik komanda tərəfindən oxunub, işə salınıb və brauzerdə (vətəndaş PWA + dispetçer paneli) yoxlanılıb.
-- **Avtomatik testlər:** 120 unit test və 125 inteqrasiya testi (7 fayl: API + WebSocket + MongoDB); Artillery ilə yük/stress testləri, 1000+ socket realtime testi, spam selində SOS bütövlüyü testi (`backend/tests/load/reports/REPORT.md`).
+- **Avtomatik testlər:** 120 unit test və 137 inteqrasiya testi (8 fayl: API + WebSocket + MongoDB, o cümlədən 3 rəsmi Challenge Drop üçün ayrıca test faylı); Artillery ilə yük/stress testləri, 1000+ socket realtime testi, spam selində SOS bütövlüyü testi (`backend/tests/load/reports/REPORT.md`).
 - **Linting:** ESLint (o cümlədən `jsx-a11y` əlçatanlıq qaydaları) və Prettier.
 - **Məhsul daxilində AI nəzarəti (human-in-the-loop):** zərər analizi təsdiqsiz tətbiq olunmur (`ai.vision.autoApply=false`); bütün AI əməliyyatları audit log-a yazılır; çatbot sualın mətnini saxlamır (yalnız mövzusunu); AI cavabları yalnız canlı məlumat bazasındakı faktlara əsaslanır.
 - **Sirlər:** heç bir real API açarı repozitoriyaya commit olunmayıb; panel vasitəsilə daxil edilən açarlar AES-256-GCM ilə şifrələnir, brauzerə yalnız son 4 simvol qaytarılır.

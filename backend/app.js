@@ -20,7 +20,10 @@ import {
   HazardService,
   ZoneService,
   ShelterService,
+  ProfileService,
+  RbacService,
   SimulationService,
+  FloodSimulationService,
   bootstrap,
 } from "#services";
 
@@ -32,6 +35,7 @@ import { modules } from "#modules";
 
 // Module reset hooks are registered once per process (startApp may run again in tests)
 const resetHooked = new Set();
+let priorityResolverRegistered = false;
 
 // Module config sections must exist before ConfigService.load()
 for (const mod of modules) {
@@ -178,6 +182,12 @@ const startApp = async ({ port = config.port } = {}) => {
   await mongoDBService.connect();
   await ConfigService.load();
   await bootstrap();
+  // Challenge Drop #1: limited-mobility citizens get the priority_citizen role
+  await ProfileService.loadPriorityDevices();
+  if (!priorityResolverRegistered) {
+    RbacService.registerDeviceRoleResolver((deviceId) => ProfileService.roleFor(deviceId));
+    priorityResolverRegistered = true;
+  }
   // In-memory read models (small, rarely changing data on the hot path)
   await Promise.all([
     routingService.load(),
@@ -217,6 +227,7 @@ const startApp = async ({ port = config.port } = {}) => {
   // Large accept backlog: bursts of SOS must queue, not be refused
   await new Promise((resolve) => httpServer.listen({ port, backlog: 4096 }, resolve));
   const actualPort = httpServer.address().port;
+  FloodSimulationService.port = actualPort;
   if (!config.isTest) {
     console.log(`
   ┌───────────────────────────────────────────────┐

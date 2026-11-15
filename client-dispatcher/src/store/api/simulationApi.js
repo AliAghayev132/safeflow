@@ -28,6 +28,22 @@ export const simulationApi = baseApi.injectEndpoints({
       query: (body) => post('/sos-wave', body),
       invalidatesTags: ['Rules'],
     }),
+    // Challenge Drop #3 — 600 fake SOS + genuine citizens against the real endpoint
+    sosFlood: builder.mutation({
+      query: (body) => post('/sos-flood', body),
+      transformResponse: (res) => res.data.report,
+      invalidatesTags: ['Queue'],
+    }),
+    // Challenge Drop #2 — external routing API outage (ok | 503 | timeout)
+    getRoutingOutage: builder.query({
+      query: () => '/simulation/routing-outage',
+      transformResponse: (res) => res.data.routing,
+      providesTags: ['RoutingOutage'],
+    }),
+    setRoutingOutage: builder.mutation({
+      query: (mode) => post('/routing-outage', { mode }),
+      invalidatesTags: ['RoutingOutage'],
+    }),
     resetSimulation: builder.mutation({
       query: () => post('/reset'),
       invalidatesTags: ['Overview', 'Roads', 'Rules', 'Queue'],
@@ -82,6 +98,9 @@ export const {
   useSimulateTrafficMutation,
   useSetShelterOccupancyMutation,
   useSosWaveMutation,
+  useSosFloodMutation,
+  useGetRoutingOutageQuery,
+  useSetRoutingOutageMutation,
   useResetSimulationMutation,
   useGetScenariosQuery,
   useStartScenarioMutation,

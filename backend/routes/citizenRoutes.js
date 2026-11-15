@@ -1,6 +1,6 @@
 import { Router } from "#constants";
 import { citizenController as c } from "#controllers";
-import { identifyDevice, authorize, rateLimitFor } from "#middlewares";
+import { identifyDevice, authorize, rateLimitFor, recordLatency } from "#middlewares";
 
 /**
  * Module 1 — Citizen safety API. No account: the device id is the identity
@@ -18,7 +18,7 @@ CitizenRouter.get("/evacuation", ...read, c.getEvacuationPlan);
 CitizenRouter.get("/state", ...read, c.getState);
 CitizenRouter.get("/roads", ...read, c.getRoads);
 
-CitizenRouter.post("/sos", ...rateLimitFor("sos.create"), authorize("sos:create"), c.sendSos);
+CitizenRouter.post("/sos", recordLatency("sos"), ...rateLimitFor("sos.create"), authorize("sos:create"), c.sendSos);
 CitizenRouter.patch("/sos/:clientId", ...write, authorize("sos:create"), c.updateSosDetails);
 CitizenRouter.patch("/status", ...write, c.updateStatus);
 CitizenRouter.post("/checkin", ...write, c.checkIn);

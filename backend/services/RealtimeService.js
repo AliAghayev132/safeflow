@@ -21,7 +21,10 @@ class RealtimeService {
     const on = (event, handler) => eventBus.subscribe(event, handler);
     const pub = RealtimeService.publish;
 
-    on(E.SOS_CREATED, ({ sos }) => pub({ type: S.SOS_NEW, data: sos, channel: C.SOS }));
+    // Spam-flagged SOS are not pushed to dispatchers (a flood cannot flood the panel)
+    on(E.SOS_CREATED, ({ sos }) => {
+      if (!sos.spamFlagged) pub({ type: S.SOS_NEW, data: sos, channel: C.SOS });
+    });
     on(E.SOS_UPDATED, ({ sos }) => pub({ type: S.SOS_UPDATED, data: sos, channel: C.SOS }));
     on(E.BRIGADE_UPDATED, ({ brigade }) =>
       pub({ type: S.BRIGADE_UPDATED, data: brigade, channel: C.BRIGADES }),

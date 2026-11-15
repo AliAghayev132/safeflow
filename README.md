@@ -86,7 +86,7 @@ Vətəndaş tətbiqi hesab tələb etmir — anonim cihaz UUID-si ilə identifik
 ```bash
 cd backend
 npm run test:unit          # 120 unit test — alqoritm kənar halları (4/3 siqnal, eyni cihaz ×4, 499/501 m, 4:59/5:01, 89/90%, 94/95%, cooldown, modullar, AI)
-npm run test:integration   # 125 inteqrasiya testi (7 fayl) — API + WebSocket + MongoDB: RBAC, idempotentlik, klasterləşmə, fallback, 429, replay, modullar
+npm run test:integration   # 137 inteqrasiya testi (8 fayl) — API + WebSocket + MongoDB: RBAC, idempotentlik, klasterləşmə, fallback, 429, replay, modullar, 3 rəsmi Challenge Drop
 npm run test:load          # Artillery — normal və pik yük
 npm run test:stress        # Artillery — sınma nöqtəsinə qədər artım
 npm run test:realtime      # 1000+ socket, fan-out və alert yaranma vaxtı
@@ -192,20 +192,61 @@ Hakatonda tələblər mərhələlərlə ("Challenge Drop") gəldi. Hər dəfə �
 | Provider qatı + mock fallback | routing, `modules/ai/providers` | Xarici servis yoxdursa/çökərsə növbəti provider; demo həmişə işləyir |
 | UI slotları | klientlərdə `modules/`, profil linkləri, root router-lər | Modul öz səhifəsini/kartını əsas layout-u dəyişmədən əlavə edir |
 
-### Drop 0 — Əsas modullar (Modul 1 və Modul 2)
+### Rəsmi Challenge Drop-lar (PM Final) — necə həll olunub, necə göstərilir, necə yoxlanılır
+
+Hər üçü avtomatik testlə yoxlanılır: `backend/tests/integration/drops.test.js` (`npm run test:integration`).
+
+#### Challenge Drop #1 (12:00) — Hərəkət məhdudiyyətli şəxs rolu + çoxdillilik
+**Tələb:** "Hərəkət Məhdudiyyətli Şəxs / Xüsusi Qayğıya Ehtiyacı Olan Vətəndaş" (Prioritet SOS) rolu; SOS avtomatik **Priority #1**; yalnız əlil arabası / tibbi nəqliyyat üçün əlçatan (panduslu, maneəsiz) marşrut; UI AZ/EN dinamik dəyişsin.
+**Həll:**
+- `config/rbac.json`-da yeni rol **`priority_citizen`** (citizen-dən miras + `sos:priority`, `route:accessible`). Profildə "əlil arabası" və ya "hərəkət məhdudiyyəti" seçilən cihaz bu rolu avtomatik alır (`ProfileService.roleFor` → RBAC device-role resolver).
+- Bu rolun hər SOS-u avtomatik `priorityOne: true` alır və növbədə birinci olur (triage çəkisi 1000 + briqada tövsiyəsi).
+- Evakuasiya marşrutu yalnız maneəsiz qrafla hesablanır: pilləkən, dik yoxuş, maneə, dağıntı olan seqmentlər çıxarılır, yalnız pilləkənsiz girişi olan məntəqə seçilir. Xarici API maneə məlumatı vermədiyi üçün bu rejimdə istifadə olunmur.
+- UI: i18next, **AZ / EN / RU**, dil anında dəyişir və yadda qalır (hər iki tətbiqdə).
+
+**Göstərmək:** Vətəndaş → Profil → "Əlil arabası" → Yadda saxla → profil və SOS ekranında "Prioritet SOS rolu · Priority #1" nişanı → SOS göndər → dispetçerdə Priority #1 nişanı ilə növbənin başında; Təxliyə → maneəsiz marşrut.
+
+#### Challenge Drop #2 (13:00) — Xarici xəritə / marşrut API-si sıradan çıxdı
+**Tələb:** API 503 qaytarır və ya 5 saniyədən gec cavab verir; sistem çökməməli, Circuit Breaker / Fallback avtomatik işə düşməli, marşrut lokal ehtiyat bazadan hesablanmalı, istifadəçiyə "Oflayn / Ehtiyat marşrut rejimində işləyir" bildirişi göstərilməlidir.
+**Həll:** `services/RouteService.js`
+- Provayder zənciri: **xarici API → lokal yol qrafı (MongoDB-dəki statik koordinat şəbəkəsi, Dijkstra) → düz xətt**.
+- Xarici sorğuya 1.5 s timeout; 503, timeout və digər xətalar tutulur, istifadəçiyə heç vaxt 5xx getmir.
+- **Circuit breaker:** 3 ardıcıl xətadan sonra açılır və 30 s ərzində ölü API-yə ümumiyyətlə müraciət edilmir (cavab dərhal lokal qrafdan gəlir); sonra yarı açıq rejimdə sınaq edir.
+- Cavabda `routing.fallback: true`; vətəndaş tətbiqində **"Oflayn / Ehtiyat marşrut rejimində işləyir"** bannerı.
+- Real API `ROUTING_EXTERNAL_URL` ilə qoşulur; qoşulmayıbsa daxili simulyator eyni rolu oynayır.
+
+**Göstərmək:** Dispetçer → Simulyasiya → "Xarici xəritə API-si (Drop #2)" → **HTTP 503** və ya **> 5 san** → vətəndaş tətbiqində rayon dəyiş → marşrut gəlir + ehtiyat rejim bannerı; kartda circuit breaker "Açıq" olur. "İşləyir" ilə bərpa.
+
+#### Challenge Drop #3 (14:00) — 500+ saxta SOS (SOS Flood / Spam Attack), JWT/RBAC, < 300 ms
+**Tələb:** SOS endpoint-ləri rate limiting və dublikat filtrasiyası ilə qorunsun, saxta sorğular dispetçer panelini bloklamasın; briqada yönləndirilməsi JWT / RBAC ilə qorunsun; kütləvi sorğularda orta cavab müddəti < 300 ms.
+**Həll:**
+- **Rate limiting** IP, cihaz və istifadəçi üzrə ayrıca (`429` + `Retry-After`), limitlər admin paneldən canlı dəyişir.
+- **Dublikat filtrasiyası:** eyni `clientId` təkrarı yeni SOS yaratmır; eyni cihazın təkrar toxunuşları açıq SOS-a birləşdirilir.
+- **Spam aşkarlanması:** cihaz partlayışı, bir IP-dən cihaz rotasiyası → SOS silinmir (audit üçün qalır), amma `spamFlagged` olur, klasterə sayılmır, **dispetçer növbəsinə, xəritəyə və canlı axına düşmür**. Spam üçün ucuz yol: əlavə DB sorğuları, triage və yayım edilmir.
+- **JWT + RBAC:** briqada göndərmək `sos:assign`, həyəcan qərarı `alert:decide` icazəsi tələb edir; tokensiz → 401, icazəsiz rol → 403.
+- **Performans:** isti MongoDB bağlantı hovuzu, yaddaş keşləri, server tərəfində cavab müddətinin ölçülməsi (`middlewares/latency.js`).
+
+**Ölçü (test, 600 saxta + 20 real SOS eyni dalğada, botlar ayrıca thread-də):** real SOS-ların **20/20**-si qəbul olundu, 0 xəta; server tərəfində **orta cavab müddəti ≈ 210–240 ms** (p95 ≈ 0.6–0.7 s).
+**Göstərmək:** Dispetçer → Simulyasiya → "SOS seli hücumu (Drop #3)" → **Hücumu başlat** → kartda: bloklanan (429), birləşdirilən dublikatlar, spam, real SOS 20/20, orta cavab müddəti; triage növbəsində spam görünmür.
+
+---
+
+### Əlavə mərhələlər (hakaton ərzində verilən digər tələblər)
+
+### Mərhələ A — Əsas modullar (Modul 1 və Modul 2)
 **Tələb:** vətəndaş SOS tətbiqi və böhran mərkəzi paneli. **Həll:** Express + MongoDB + Socket.IO ümumi server, iki ayrı Vite klienti, təmiz `engine/` qatı.
 
-### Drop 1 — Böyük spesifikasiya paketi
+### Mərhələ B — Böyük spesifikasiya paketi
 **Tələb:** offline rejim, REST/WebSocket replay, idempotent SOS, sliding-window klasterləşmə, RBAC, routing fallback, rate limiting, i18n (az/en/ru), testlər.
 **Necə qəbul olundu:** qərar məntiqi `engine/`-də saf funksiyalar kimi yazıldığı üçün kənar halları (499/501 m, 4:59/5:01) unit testlərlə dəqiq yoxlandı; event-lərin `seq` nömrələnməsi replay və polling-i eyni mənbədən verdi; RBAC kodda yox, `rbac.json`-da; marşrut provider zənciri kimi qurulub; hədlər runtime config-də.
 
-### Drop 2 — Dispetçer performansı + xəritə klasterləşməsi
+### Mərhələ C — Dispetçer performansı + xəritə klasterləşməsi
 **Tələb:** SOS seli altında dispetçer ekranı donmamalıdır. **Həll:** dashboard-da hadisələrin batch-lə emalı, SOS markerlərinin xəritədə klasterləşdirilməsi, spam/təhlükəsiz cihazların alert sayından çıxarılması. Backend dəyişmədi — dəyişiklik klient tərəfdə qaldı.
 
-### Drop 3 — Məhdud hərəkət imkanlı şəxslər Priority #1 + maneəsiz marşrut
+### Mərhələ D — Məhdud hərəkət imkanlı şəxslər Priority #1 + maneəsiz marşrut
 **Tələb:** əlil arabası və s. olan vətəndaşlar növbədə birinci olmalı, marşrut pilləkənsiz olmalıdır. **Həll:** bu drop modul fundamentinin (runtime feature flag-lar, modul reyestri, rollar) yaradılmasına təkan verdi. Triage çəkilərinə mobility faktoru, routing-ə `accessibleRouting` flag-ı ilə maneəli kənarlardan qaçma, `smartBalancing` ilə sığınacaq yükünün balanslaşdırılması əlavə olundu.
 
-### Drop 4 — 7 feature modul
+### Mərhələ E — 7 feature modul
 **Tələb:** dronlar, edge node, partner API, əlçatanlıq, smart balancing, briqada təklifi, könüllülər. **Necə qəbul olundu:** hər biri `modules/<ad>/` qovluğunda müstəqil modul kimi (bəziləri paralel git worktree-lərdə) yazıldı və `modules/index.js`-ə bir sətirlə qoşuldu. Hər modulun öz feature flag-ı, config bölməsi, RBAC icazələri və testləri var:
 - **drones** — toplanma məntəqələrinə təchizat çatdırılması;
 - **edgeNode** — eyni backend `EDGE_MODE`-da toplanma məntəqəsində yerli şəbəkə kimi işləyir, internet qayıdanda mərkəzlə sinxronlaşır;
@@ -214,10 +255,10 @@ Hakatonda tələblər mərhələlərlə ("Challenge Drop") gəldi. Hər dəfə �
 - **brigadeSuggestion** — ETA üzrə sıralama, alternativlər, ən tez boşalacaq briqada;
 - **volunteers** — peşəkar könüllülər şəbəkəsi (razılıq ilə qeydiyyat).
 
-### Drop 5 — UX düzəlişləri
+### Mərhələ F — UX düzəlişləri
 **Tələb:** custom select/confirm dialoqları, multi-brigade göndərmə, toplanma məntəqələrindən dron sorğuları, admin bölməsinin təmizlənməsi, simulyasiya reset xətası, mobil redizayn. **Həll:** modul kontraktına awaited `reset` hook-u əlavə edildi (hər modul öz məlumatını silir, dispetçer köhnəlmiş insidentləri atır); admin konfiqurasiyası kateqoriyalara bölündü, rollar matrisi oxunaqlı edildi; ümumi `Select`/`Confirm` komponentləri yaradıldı.
 
-### Drop 6 — 5 AI modulu (< 300 ms tələbi ilə)
+### Mərhələ G — 5 AI modulu
 **Tələb:** səsli SOS + NLP, dron görüntüsündən zərər analizi (CV), izdiham proqnozu, RAG çatbot, təchizat planı; real və mock provider-lər; gecikmə < 300 ms. **Həll:** öncədən qurulmuş provider qatı (LLM: Claude/lokal/mock, STT: Whisper/lokal/mock, Vision: YOLO/Claude/mock). Hər AI modulu ayrıca feature flag (`aiVoiceSos`, `aiDamage`, `aiForecast`, `aiChatbot`, `aiSupply`) ilə `modules/ai/`-də yaşayır. Ağır işlər arxa fon job-ları kimi icra olunur, API dərhal cavab qaytarır; xarici servis yoxdursa/gecikirsə mock fallback `mock: true` ilə işarələnir. Dron zərər analizi defolt olaraq **human-in-the-loop**-dur (`ai.vision.autoApply=false`): AI nəticəsi yalnız təklifdir, dispetçer onu "Xəritəyə tətbiq et" ilə təsdiqləyir (`POST /api/ai/damage/:id/approve`, audit log-a yazılır) və lazım olsa geri qaytarır (revert).
 
 ---
@@ -232,8 +273,6 @@ Hakatonda tələblər mərhələlərlə ("Challenge Drop") gəldi. Hər dəfə �
 ## 7. Əlavə sənədlər
 
 - [AI_DECLARATION.md](AI_DECLARATION.md) — Aİ istifadəsi haqqında bəyannamə
-- [EVALUATION.md](EVALUATION.md) — qiymətləndirmə
 - [docs/Texniki_izah.docx](docs/Texniki_izah.docx) — texniki izah (yanaşma, texnologiyalar, təhlükəsizlik, performans)
-- [docs/DEMO_SCRIPT.md](docs/DEMO_SCRIPT.md) — demo video ssenarisi
 - [edge/README.md](edge/README.md) — edge node quraşdırılması
 - [backend/tests/load/reports/REPORT.md](backend/tests/load/reports/REPORT.md) — yük testi hesabatı

@@ -13,6 +13,9 @@ SimulationRouter.post("/roads/:edgeId/barrier", s.setRoadBarrier);
 SimulationRouter.post("/traffic", s.randomTraffic);
 SimulationRouter.post("/shelters/:id/occupancy", s.setShelterOccupancy);
 SimulationRouter.post("/sos-wave", s.sosWave);
+SimulationRouter.post("/sos-flood", s.sosFlood);
+SimulationRouter.get("/routing-outage", s.routingOutageStatus);
+SimulationRouter.post("/routing-outage", s.routingOutage);
 SimulationRouter.post("/reset", s.reset);
 
 SimulationRouter.get("/scenarios", s.listScenarios);
