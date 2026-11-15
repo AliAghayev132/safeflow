@@ -54,13 +54,29 @@ class RbacService {
     );
   }
 
-  /** Principal for an anonymous citizen device. */
+  // Optional, synchronous device-role resolvers registered by feature modules
+  // (e.g. volunteers: a consented volunteer device → role "volunteer").
+  static #deviceResolvers = [];
+
+  static registerDeviceRoleResolver(fn) {
+    RbacService.#deviceResolvers.push(fn);
+  }
+
+  /** Principal for an anonymous citizen device (role may be upgraded by a module). */
   static citizenPrincipal(deviceId) {
+    let role = "citizen";
+    for (const resolve of RbacService.#deviceResolvers) {
+      const r = resolve(deviceId);
+      if (r && RbacService.isRole(r)) {
+        role = r;
+        break;
+      }
+    }
     return {
       kind: "citizen",
-      role: "citizen",
+      role,
       deviceId,
-      permissions: RbacService.permissionsFor("citizen"),
+      permissions: RbacService.permissionsFor(role),
     };
   }
 

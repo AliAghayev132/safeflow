@@ -20,4 +20,6 @@
  *
  * Adding a module = create the folder and add ONE import line below.
  */
-export const modules = [];
+import volunteers from "./volunteers/index.js";
+
+export const modules = [volunteers];

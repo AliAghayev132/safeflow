@@ -4,3 +4,4 @@ export { baseApi, API_ORIGIN, ALL_TAGS } from './baseApi'
 // Feature endpoints
 export * from './citizenApi'
 export * from './featuresApi'
+export * from './volunteerApi'
