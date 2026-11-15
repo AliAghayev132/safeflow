@@ -20,4 +20,6 @@
  *
  * Adding a module = create the folder and add ONE import line below.
  */
-export const modules = [];
+import drones from "./drones/index.js";
+
+export const modules = [drones];

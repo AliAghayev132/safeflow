@@ -1,4 +1,4 @@
-import { Operator, Brigade } from "#models";
+import { Operator, Brigade, Shelter } from "#models";
 import { config } from "#config";
 import { SeedService } from "./SeedService.js";
 
@@ -12,11 +12,12 @@ const bootstrap = async () => {
   }
 
   for (const account of config.defaultOperators) {
-    const { brigadeCode, ...data } = account;
+    const { brigadeCode, shelterCode, ...data } = account;
     const brigade = brigadeCode ? await Brigade.findOne({ code: brigadeCode }) : null;
+    const shelter = shelterCode ? await Shelter.findOne({ code: shelterCode }) : null;
     const existing = await Operator.findOne({ username: data.username });
     if (!existing) {
-      await Operator.create({ ...data, brigade: brigade?._id ?? null });
+      await Operator.create({ ...data, brigade: brigade?._id ?? null, shelter: shelter?._id ?? null });
       if (!config.isTest) console.log(`👤 Default account created: ${data.username} (${data.role})`);
     } else {
       // Keep default accounts aligned with their configured role / brigade
@@ -28,6 +29,10 @@ const bootstrap = async () => {
       }
       if (brigade && String(existing.brigade) !== String(brigade._id)) {
         existing.brigade = brigade._id;
+        changed = true;
+      }
+      if (shelter && String(existing.shelter) !== String(shelter._id)) {
+        existing.shelter = shelter._id;
         changed = true;
       }
       if (changed) await existing.save();

@@ -60,6 +60,13 @@ const config = {
       role: "brigade_lead",
       brigadeCode: "XRX-01",
     },
+    {
+      username: process.env.DEFAULT_MANAGER_USERNAME || "manager1",
+      password: process.env.DEFAULT_MANAGER_PASSWORD || "Manager123!",
+      fullName: "Yasamal Mərkəzi Parkı məntəqə məsulu",
+      role: "shelter_manager",
+      shelterCode: "SH-06",
+    },
   ],
 
   // External routing API (OSRM-compatible). Empty → provider is skipped.
