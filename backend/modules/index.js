@@ -15,6 +15,7 @@
  *     rootRouters?: [{ path: "/", router }],     // mounted at the root, flag-gated
  *     rules?:    [rule, ...],              // RuleEngine rules (flag-gated)
  *     init?:     async (ctx) => {},        // after DB + core services are ready
+ *     reset?:    async () => {},           // "Reset simulation": wipe operational data (awaited)
  *     stop?:     async () => {},           // graceful shutdown
  *   }
  *

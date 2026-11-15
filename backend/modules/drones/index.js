@@ -1,6 +1,4 @@
 import { config } from "#config";
-import { domainEvents } from "#constants";
-import { eventBus } from "#services/EventBus.js";
 import { dronesDefaults } from "./defaults.js";
 import { DronesRouter } from "./routes/dronesRoutes.js";
 import { autoProposeRule } from "./rules/autoPropose.rule.js";
@@ -14,8 +12,6 @@ import { DroneService } from "./services/DroneService.js";
  *   services/   SupplyService, DroneService
  *   routes/     /api/drones (flag `drones`)
  */
-let unsubscribeReset = null;
-
 export default {
   name: "drones",
   feature: "drones",
@@ -27,14 +23,12 @@ export default {
     await DroneService.seedFleet();
     // Ticker follows the same switch as the brigade simulation (off in tests)
     await DroneService.startProvider({ ticker: config.enableBrigadeTicker });
-    // "Reset simulation" also parks the fleet and clears missions
-    unsubscribeReset?.();
-    unsubscribeReset = eventBus.subscribe(domainEvents.SYSTEM_RESET, () => DroneService.reset());
   },
 
+  // "Reset simulation" also parks the fleet and clears missions (awaited)
+  reset: () => DroneService.reset(),
+
   async stop() {
-    unsubscribeReset?.();
-    unsubscribeReset = null;
     await DroneService.stopProvider();
   },
 };

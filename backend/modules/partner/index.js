@@ -1,6 +1,7 @@
 import { partnerDefaults } from "./defaults.js";
 import { PartnerApiRouter, PartnerAdminRouter } from "./routes/partnerRoutes.js";
 import { PartnerRealtime } from "./services/PartnerRealtime.js";
+import { PartnerRequest } from "./models/partnerRequest.model.js";
 
 /**
  * Feature module: secure Partner API for other agencies (army, police,
@@ -21,4 +22,8 @@ export default {
   ],
   init: async () => PartnerRealtime.init(),
   stop: async () => PartnerRealtime.stop(),
+  // Simulation reset: incoming agency requests belong to the old scenario
+  reset: async () => {
+    await PartnerRequest.deleteMany({});
+  },
 };

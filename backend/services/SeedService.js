@@ -7,6 +7,7 @@ import {
   Citizen,
   Brigade,
   Alert,
+  SafeShare,
 } from "#models";
 import { buildCityData } from "#data";
 
@@ -29,6 +30,7 @@ class SeedService {
       Citizen.deleteMany({}),
       Brigade.deleteMany({}),
       Alert.deleteMany({}),
+      SafeShare.deleteMany({}),
     ]);
   }
 

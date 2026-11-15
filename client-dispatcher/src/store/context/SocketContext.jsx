@@ -6,7 +6,7 @@ import { io } from 'socket.io-client'
 import { useDispatch, useSelector, useStore } from 'react-redux'
 
 import { baseApi, API_ORIGIN, ALL_TAGS } from '../api/baseApi'
-import { eventsBatched } from '../slices/liveSlice'
+import { eventsBatched, resetLive } from '../slices/liveSlice'
 import { alertIncoming, connectionChanged, realtimeCursor, toast } from '../slices/uiSlice'
 import { playAlarm } from '@utils'
 
@@ -115,8 +115,13 @@ export const SocketProvider = ({ children }) => {
           dispatch(baseApi.util.invalidateTags(['Config', 'Rules', 'Features']))
           return
         case E.SYSTEM_RESET:
+          // Drop the whole operational picture — the overview refetch only
+          // upserts, so deleted incidents would otherwise stay on the map
           buffer = []
-          refetchAll()
+          dispatch(resetLive())
+          // Module pages (drones, volunteers, partner…) use their own tags —
+          // reset the whole cache so every mounted query refetches
+          dispatch(baseApi.util.resetApiState())
           dispatch(toast.info('toast.systemReset'))
           return
         default:

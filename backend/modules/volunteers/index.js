@@ -2,6 +2,7 @@ import { RbacService } from "#services";
 import { VolunteerRouter } from "./routes/volunteerRoutes.js";
 import { medicalSuggestionRule } from "./rules/medicalSuggestion.rule.js";
 import { VolunteerService, RequestService } from "./services/index.js";
+import { VolunteerProfile, VolunteerRequest } from "./models/index.js";
 
 let expiryTimer = null;
 
@@ -45,6 +46,13 @@ export default {
       RequestService.expire().catch((e) => console.error("Volunteer expiry:", e.message));
     }, 60000);
     expiryTimer.unref?.();
+  },
+
+  // Simulation reset: drop requests; shelter/zone ids are re-created by the seed
+  async reset() {
+    await VolunteerRequest.deleteMany({});
+    await VolunteerProfile.updateMany({}, { $set: { currentShelter: null, zone: null } });
+    await VolunteerService.load();
   },
 
   async stop() {

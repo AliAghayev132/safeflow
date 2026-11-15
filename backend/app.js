@@ -20,6 +20,7 @@ import {
   HazardService,
   ZoneService,
   ShelterService,
+  SimulationService,
   bootstrap,
 } from "#services";
 
@@ -28,6 +29,9 @@ import { rules } from "#rules";
 
 // Feature modules (drones, edge node, partner API, volunteers, ...)
 import { modules } from "#modules";
+
+// Module reset hooks are registered once per process (startApp may run again in tests)
+const resetHooked = new Set();
 
 // Module config sections must exist before ConfigService.load()
 for (const mod of modules) {
@@ -192,7 +196,13 @@ const startApp = async ({ port = config.port } = {}) => {
     }
     initialized = true;
   }
-  for (const mod of modules) await mod.init?.({ config });
+  for (const mod of modules) {
+    await mod.init?.({ config });
+    if (mod.reset && !resetHooked.has(mod.name)) {
+      SimulationService.onReset(() => mod.reset());
+      resetHooked.add(mod.name);
+    }
+  }
 
   if (config.enableBrigadeTicker) {
     brigadeTicker = setInterval(() => {

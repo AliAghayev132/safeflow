@@ -93,9 +93,24 @@ class SimulationService {
   }
 
   /** Wipe incidents and reload the city, then tell clients to refetch. */
+  /** Module reset hooks (feature modules wipe their operational data). */
+  static #resetHooks = new Set();
+  static onReset(fn) {
+    SimulationService.#resetHooks.add(fn);
+    return () => SimulationService.#resetHooks.delete(fn);
+  }
+
   static async reset() {
     ScenarioService.stop();
     await SeedService.reseed();
+    // Every module finishes wiping BEFORE clients are told to refetch
+    for (const hook of SimulationService.#resetHooks) {
+      try {
+        await hook();
+      } catch (error) {
+        console.error("⚠️  Reset hook failed:", error.message);
+      }
+    }
     await Promise.all([
       routingService.load(),
       ZoneService.load(),

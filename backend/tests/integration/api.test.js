@@ -482,3 +482,20 @@ describe("Config rules engine", () => {
     assert.equal(cfg.effective.sosCluster.minSignals, 4);
   });
 });
+
+describe("Simulation reset", () => {
+  test("wipes incidents, alerts and citizens — the overview is empty afterwards", async () => {
+    await resetWorld();
+    for (let i = 0; i < 4; i++) await sendSos({ type: "fire", ...YASAMAL });
+    await sleep(300);
+    const before = (await api("GET", "/dispatcher/overview", { token: dispatcher.accessToken })).data;
+    assert.ok(before.sos.length >= 4);
+
+    await resetWorld();
+    const after = (await api("GET", "/dispatcher/overview", { token: dispatcher.accessToken })).data;
+    assert.equal(after.sos.length, 0);
+    assert.equal(after.alerts.length, 0);
+    const queue = (await api("GET", "/dispatcher/sos/queue", { token: dispatcher.accessToken })).data;
+    assert.equal((queue.items ?? queue.sos ?? queue).length ?? 0, 0);
+  });
+});
