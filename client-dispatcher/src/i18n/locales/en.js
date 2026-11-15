@@ -1,6 +1,6 @@
 const en = {
   app: {
-    title: 'CRISIS CENTRE',
+    title: 'SafeFlow',
     subtitle: 'Dispatcher console',
     loadingLive: 'Loading the operational picture…',
     loading: 'Loading…',
@@ -60,7 +60,7 @@ const en = {
     resynced: 'Connection restored — data refreshed',
   },
   login: {
-    brand: 'CRISIS CENTRE',
+    brand: 'SafeFlow',
     brandSub: 'Dispatcher module',
     headline1: 'Urban crisis &',
     headline2: 'crowd evacuation engine',

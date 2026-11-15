@@ -24,8 +24,9 @@ export const aiDefaults = {
     minConfidence: 0.4,
     timeoutMs: 20000,
     maxImageBytes: 8388608,
-    // Apply the result to the road network automatically when confident enough
-    autoApply: true,
+    // Human in the loop by default: results are proposals a dispatcher applies
+    // with one click. true = apply automatically when confident enough.
+    autoApply: false,
     autoApplyMinConfidence: 0.6,
     // Road segments within this radius of the photo are affected
     affectRadiusMeters: 120,

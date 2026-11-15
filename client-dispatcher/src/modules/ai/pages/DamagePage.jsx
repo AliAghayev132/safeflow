@@ -2,7 +2,7 @@ import { useRef, useState } from 'react'
 import { useSelector } from 'react-redux'
 import { useTranslation } from 'react-i18next'
 import { MapContainer, TileLayer, CircleMarker, Tooltip } from 'react-leaflet'
-import { ImageUp, Plane, Undo2 } from 'lucide-react'
+import { ImageUp, Plane, Undo2, MapPinCheck } from 'lucide-react'
 
 import { Card, Button, Icon3D, Select, PageLoader, StatusBadge, Badge, useConfirm } from '@components'
 import { selectZones } from '@store/slices/liveSlice'
@@ -10,7 +10,7 @@ import { useAction } from '@store/hooks'
 import { MAP_CENTER } from '@constants'
 import { formatAgo } from '@utils'
 import { useNow } from '@hooks'
-import { useGetDamageQuery, useAssessImageMutation, useDroneSurveyMutation, useRevertDamageMutation } from '../api'
+import { useGetDamageQuery, useAssessImageMutation, useDroneSurveyMutation, useRevertDamageMutation, useApproveDamageMutation } from '../api'
 import { useAiLive, AI_POLL_MS, SEVERITY_META, ProviderBadge } from '../shared'
 
 const TILE = 'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}'
@@ -34,6 +34,7 @@ export const DamagePage = () => {
   const [assess, { isLoading: uploading }] = useAssessImageMutation()
   const [survey, { isLoading: surveying }] = useDroneSurveyMutation()
   const [revert] = useRevertDamageMutation()
+  const [approve] = useApproveDamageMutation()
 
   const zone = zones.find((z) => z.code === (zoneCode || zones[0]?.code))
   const upload = (e) => {
@@ -135,12 +136,20 @@ export const DamagePage = () => {
                     {a.droneCode ? ` · ${a.droneCode}` : ''}
                     {a.hazards?.length ? ` · ${a.hazards.join(', ')}` : ''}
                   </p>
+                  {a.status === 'done' && a.applied.length === 0 && ['partial', 'blocked', 'collapsed'].includes(a.severity) && (
+                    <p className="mt-1 text-xs font-semibold text-info">{t('ai.damage.proposal')}</p>
+                  )}
                   {a.applied.length > 0 && (
                     <p className="mt-1 text-xs font-semibold text-warning">
                       {t('ai.damage.applied', { closed: a.applied.filter((x) => x.action === 'closed').length, damaged: a.applied.filter((x) => x.action === 'damaged').length })}
                     </p>
                   )}
                 </div>
+                {a.status === 'done' && a.applied.length === 0 && ['partial', 'blocked', 'collapsed'].includes(a.severity) && (
+                  <Button size="sm" variant="critical" onClick={() => run(approve(a.id), 'ai.damage.approved')} leftIcon={<MapPinCheck className="h-3.5 w-3.5" />}>
+                    {t('ai.damage.approve')}
+                  </Button>
+                )}
                 {a.applied.length > 0 && a.status !== 'reverted' && (
                   <Button size="sm" variant="ghost" onClick={() => onRevert(a)} leftIcon={<Undo2 className="h-3.5 w-3.5" />}>
                     {t('ai.damage.revert')}

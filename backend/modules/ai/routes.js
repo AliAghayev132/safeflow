@@ -156,6 +156,16 @@ DamageRouter.post(
   }),
 );
 
+/** POST /api/ai/damage/:id/approve — dispatcher applies an AI proposal to the map. */
+DamageRouter.post(
+  "/:id/approve",
+  asyncHandler(async (req, res) => {
+    const doc = await DamageService.approve(req.params.id);
+    await audit(req, "ai.damage.approve", { type: "damage", id: doc._id, label: doc.severity }, { edges: doc.applied.map((a) => a.edgeId), confidence: doc.confidence });
+    return ok(res, { assessment: doc.toPublic() });
+  }),
+);
+
 /** POST /api/ai/damage/:id/revert — undo road changes of a false positive. */
 DamageRouter.post(
   "/:id/revert",

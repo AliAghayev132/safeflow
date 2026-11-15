@@ -38,6 +38,10 @@ export const aiApi = baseApi
         query: (body) => ({ url: '/ai/damage/survey', method: 'POST', body }),
         invalidatesTags: ['AiDamage'],
       }),
+      approveDamage: builder.mutation({
+        query: (id) => ({ url: `/ai/damage/${id}/approve`, method: 'POST' }),
+        invalidatesTags: ['AiDamage'],
+      }),
       revertDamage: builder.mutation({
         query: (id) => ({ url: `/ai/damage/${id}/revert`, method: 'POST' }),
         invalidatesTags: ['AiDamage'],
@@ -65,6 +69,7 @@ export const {
   useGetDamageQuery,
   useAssessImageMutation,
   useDroneSurveyMutation,
+  useApproveDamageMutation,
   useRevertDamageMutation,
   useGetSupplyPlanQuery,
   useRefreshSupplyPlanMutation,

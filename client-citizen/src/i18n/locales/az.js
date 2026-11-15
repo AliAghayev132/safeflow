@@ -1,6 +1,6 @@
 const az = {
   common: {
-    appName: 'Təhlükəsizlik',
+    appName: 'SafeFlow',
     appTagline: 'Vətəndaş təxliyə xidməti',
     live: 'Canlı',
     polling: 'Ehtiyat rejim',

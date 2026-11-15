@@ -1,7 +1,7 @@
 // Azerbaijani (default). Every UI string lives here — components use keys only.
 const az = {
   app: {
-    title: 'BÖHRAN MƏRKƏZİ',
+    title: 'SafeFlow',
     subtitle: 'Dispetçer paneli',
     loadingLive: 'Əməliyyat vəziyyəti yüklənir…',
     loading: 'Yüklənir…',
@@ -61,7 +61,7 @@ const az = {
     resynced: 'Bağlantı bərpa olundu — məlumatlar yeniləndi',
   },
   login: {
-    brand: 'BÖHRAN MƏRKƏZİ',
+    brand: 'SafeFlow',
     brandSub: 'Dispetçer modulu',
     headline1: 'Şəhər böhranı və',
     headline2: 'izdiham təxliyəsi mühərriki',

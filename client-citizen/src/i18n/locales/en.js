@@ -1,6 +1,6 @@
 const en = {
   common: {
-    appName: 'Safety',
+    appName: 'SafeFlow',
     appTagline: 'Citizen evacuation service',
     live: 'Live',
     polling: 'Fallback mode',

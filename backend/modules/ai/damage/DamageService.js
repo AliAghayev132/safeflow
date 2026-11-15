@@ -71,7 +71,7 @@ class DamageService {
         durationMs: Date.now() - started,
       });
       await doc.save();
-      await DamageService.#apply(doc);
+      if (cfg().autoApply && (doc.confidence ?? 0) >= cfg().autoApplyMinConfidence) await DamageService.#apply(doc);
     } catch (error) {
       doc.status = "failed";
       doc.summary = error.message;
@@ -83,7 +83,6 @@ class DamageService {
   /** Map hazard status from the result (closed / damaged segments). */
   static async #apply(doc) {
     const c = cfg();
-    if (!c.autoApply || (doc.confidence ?? 0) < c.autoApplyMinConfidence) return;
     if (!["partial", "blocked", "collapsed"].includes(doc.severity)) return;
     const point = fromPoint(doc.location);
     const near = edgesNear(point, c.affectRadiusMeters).slice(0, doc.severity === "collapsed" ? 4 : 2);
@@ -102,6 +101,17 @@ class DamageService {
       doc.applied = applied;
       await doc.save();
     }
+  }
+
+  /** Dispatcher approves an AI proposal → the map changes (human in the loop). */
+  static async approve(id) {
+    const doc = await DamageAssessment.findById(id);
+    if (!doc) throw AppError.notFound("Qiymətləndirmə tapılmadı");
+    if (doc.status !== "done") throw AppError.conflict("Analiz hələ hazır deyil və ya artıq emal olunub");
+    if (doc.applied.length) return doc;
+    await DamageService.#apply(doc);
+    publish(AI_EVENTS.DAMAGE_ASSESSED, doc.toPublic(), "damage");
+    return doc;
   }
 
   /** Undo what an assessment changed on the road network (false positive). */

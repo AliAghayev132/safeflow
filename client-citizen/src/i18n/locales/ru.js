@@ -1,6 +1,6 @@
 const ru = {
   common: {
-    appName: 'Безопасность',
+    appName: 'SafeFlow',
     appTagline: 'Служба эвакуации граждан',
     live: 'Онлайн',
     polling: 'Резервный режим',

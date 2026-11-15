@@ -88,7 +88,14 @@ describe("AI — damage assessment", () => {
       return list.filter((a) => a.status === "done").length >= n ? list : null;
     }, 8000);
     for (const a of done) assert.ok(["none", "partial", "blocked", "collapsed"].includes(a.severity));
-    const applied = done.filter((a) => a.applied.length);
+    // Human in the loop: nothing changes on the map until a dispatcher approves
+    assert.ok(done.every((a) => a.applied.length === 0), "no automatic road changes");
+    for (const a of done.filter((x) => ["partial", "blocked", "collapsed"].includes(x.severity))) {
+      const ok = await api("POST", `/ai/damage/${a.id}/approve`, { token: dispatcher.accessToken });
+      assert.equal(ok.status, 200);
+    }
+    const after = (await api("GET", "/ai/damage", { token: dispatcher.accessToken })).data.assessments;
+    const applied = after.filter((a) => a.applied.length);
     if (applied.length) {
       const reverted = await api("POST", `/ai/damage/${applied[0].id}/revert`, { token: dispatcher.accessToken });
       assert.equal(reverted.data.assessment.status, "reverted");

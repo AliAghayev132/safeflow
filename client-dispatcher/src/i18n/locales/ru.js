@@ -1,6 +1,6 @@
 const ru = {
   app: {
-    title: 'КРИЗИСНЫЙ ЦЕНТР',
+    title: 'SafeFlow',
     subtitle: 'Панель диспетчера',
     loadingLive: 'Загрузка оперативной обстановки…',
     loading: 'Загрузка…',
@@ -60,7 +60,7 @@ const ru = {
     resynced: 'Связь восстановлена — данные обновлены',
   },
   login: {
-    brand: 'КРИЗИСНЫЙ ЦЕНТР',
+    brand: 'SafeFlow',
     brandSub: 'Модуль диспетчера',
     headline1: 'Городской кризис и',
     headline2: 'эвакуация толпы',
