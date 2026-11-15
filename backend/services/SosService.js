@@ -1,5 +1,5 @@
 import { SosSignal, Citizen } from "#models";
-import { domainEvents, sosNeeds, vulnerableFlags, accessibilityFlags } from "#constants";
+import { domainEvents, sosNeeds, vulnerableFlags, accessibilityFlags, sosTypes } from "#constants";
 import { AppError, toPoint } from "#utils";
 import { assessSpam } from "#engine";
 import { eventBus } from "./EventBus.js";
@@ -65,7 +65,7 @@ const publishUpdated = (docs) => {
  *  4. Triage priority + brigade recommendation.
  */
 class SosService {
-  static async create({ clientId, deviceId, type, origin, ip = null, details = {}, queuedOffline = false, clientCreatedAt = null }) {
+  static async create({ clientId, deviceId, type, origin, ip = null, details = {}, queuedOffline = false, clientCreatedAt = null, ai = null }) {
     const cfg = ConfigService.get("sos");
     const now = Date.now();
 
@@ -119,6 +119,7 @@ class SosService {
       spamFlagged: spam.flagged && cfg.spam.excludeFlaggedFromClustering,
       queuedOffline: Boolean(queuedOffline),
       clientCreatedAt: clientCreatedAt ? new Date(clientCreatedAt) : null,
+      ai,
     });
     // Profile special needs (limited mobility → Priority #1) + SOS body flags
     const profileNeeds = await ProfileService.needs(deviceId);
@@ -171,12 +172,19 @@ class SosService {
   }
 
   /** Progressive, optional follow-up answers attached to a live ticket. */
-  static async updateDetails({ clientId, deviceId, details }) {
+  /**
+   * @param {string} [type] refine a "general" SOS to a concrete hazard
+   *   (voice SOS enrichment) — never overrides a type the citizen chose
+   * @param {object} [ai]   AI analysis snapshot shown to dispatchers
+   */
+  static async updateDetails({ clientId, deviceId, details, type, ai }) {
     const sos = await SosSignal.findOne({ $or: [{ clientId }, { mergedClientIds: clientId }] });
     if (!sos || sos.deviceId !== deviceId) throw AppError.notFound("SOS tapılmadı");
     if (["resolved", "cancelled"].includes(sos.status)) {
       throw AppError.conflict("SOS artıq bağlanıb");
     }
+    if (type && sos.type === "general" && sosTypes.includes(type)) sos.type = type;
+    if (ai) sos.ai = ai;
     applyDetails(sos, details);
     TriageService.applyPriority(sos);
     await TriageService.applyRecommendation(sos);

@@ -53,6 +53,8 @@ const sosSignalSchema = new Schema(
     recommendedBrigade: { type: Schema.Types.ObjectId, ref: "Brigade", default: null },
     // { suggestion{etaSec,...}, alternatives[], noneAvailable, soonestFree }
     brigadeSuggestion: { type: Schema.Types.Mixed, default: null },
+    // AI analysis of a voice SOS: { priority, summary, location, provider, mock }
+    ai: { type: Schema.Types.Mixed, default: null },
 
     // Integrity
     spamFlags: { type: [String], default: [] },
@@ -113,6 +115,7 @@ sosSignalSchema.methods.toPublic = function () {
     priorityBreakdown: this.priorityBreakdown,
     recommendedBrigade: id(this.recommendedBrigade),
     brigadeSuggestion: this.brigadeSuggestion ?? null,
+    ai: this.ai ?? null,
     spamFlags: this.spamFlags,
     spamScore: this.spamScore,
     spamFlagged: this.spamFlagged,

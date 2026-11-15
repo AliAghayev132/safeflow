@@ -12,6 +12,20 @@ import { AlertService } from "#services";
  * checked separately; safe / spam / cancelled excluded). De-duplication and
  * cooldown are handled by AlertService.raiseSosCluster.
  */
+// ---- Burst coalescing ------------------------------------------------------
+// During a mass event hundreds of SOS arrive per second. Evaluating the whole
+// window for every single SOS is O(n²) and competes with the incoming requests.
+// Triggers are therefore grouped per zone + ~250 m cell for COALESCE_MS and
+// each cell is evaluated once (with its latest trigger). Detection latency
+// grows by at most COALESCE_MS; no cell is skipped.
+const COALESCE_MS = 120;
+const CELL_DEG = 0.0025; // ≈ 250 m
+const pending = new Map(); // cellKey → latest trigger
+let flushTimer = null;
+let flushing = Promise.resolve();
+
+const cellKey = (s) => `${s.zone ?? "-"}:${Math.round(s.lat / CELL_DEG)}:${Math.round(s.lng / CELL_DEG)}`;
+
 const sosClusterRule = {
   id: "sos-cluster",
   name: "rule.sosCluster",
@@ -22,13 +36,30 @@ const sosClusterRule = {
     `Eyni zonada və ya ${c.radiusMeters} m radiusda ${Math.round(c.windowMs / 60000)} dəqiqə ərzində ən azı ${c.minSignals} fərqli cihazdan SOS (cooldown ${Math.round(c.cooldownMs / 60000)} dəq)`,
 
   async handle({ event, payload, config, rule }) {
-    const cfg = config.sosCluster;
-    // SOS_UPDATED carries a list; only re-evaluate details/merges of open tickets
     const triggers =
       event === domainEvents.SOS_CREATED
         ? [payload.sos]
         : payload.sos.filter((s) => s.status === "pending" && !s.alert);
+    for (const t of triggers) {
+      if (t.spamFlagged || t.citizenSafe) continue;
+      pending.set(cellKey(t), t);
+    }
+    if (!pending.size || flushTimer) return;
+    flushTimer = setTimeout(() => {
+      flushTimer = null;
+      const batch = [...pending.values()];
+      pending.clear();
+      // Serialised: one flush at a time (AlertService de-dup relies on it)
+      flushing = flushing
+        .then(() => sosClusterRule.evaluate({ triggers: batch, config, rule }))
+        .catch((e) => console.error("❌ [RuleEngine] rule \"sos-cluster\" failed:", e.message));
+    }, COALESCE_MS);
+    flushTimer.unref?.();
+  },
 
+  /** Evaluate a batch of triggers (one per cell). */
+  async evaluate({ triggers, config, rule }) {
+    const cfg = config.sosCluster;
     for (const trigger of triggers) {
       if (trigger.spamFlagged || trigger.citizenSafe) continue;
 

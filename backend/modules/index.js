@@ -26,5 +26,6 @@ import volunteers from "./volunteers/index.js";
 import accessibility from "./accessibility/index.js";
 import drones from "./drones/index.js";
 import edge from "./edge/index.js";
+import { aiModules } from "./ai/index.js";
 
-export const modules = [partner, volunteers, accessibility, drones, edge];
+export const modules = [partner, volunteers, accessibility, drones, edge, ...aiModules];

@@ -7,7 +7,13 @@
     "drones": true,
     "edgeNode": true,
     "partnerApi": true,
-    "volunteers": true
+    "volunteers": true,
+    "ai": true,
+    "aiVoiceSos": true,
+    "aiDamage": true,
+    "aiForecast": true,
+    "aiChatbot": true,
+    "aiSupply": true
   },
   "sosCluster": {
     "minSignals": 4,
@@ -120,6 +126,15 @@
       "ip": 1200,
       "device": 120,
       "user": 120
+    },
+    "ai.citizen": {
+      "windowMs": 60000,
+      "ip": 300,
+      "device": 20
+    },
+    "ai.operator": {
+      "windowMs": 60000,
+      "user": 600
     }
   }
 }

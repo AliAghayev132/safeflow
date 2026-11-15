@@ -40,7 +40,9 @@ const rank = (s) => SEVERITIES.indexOf(s);
 
 const mockAssessment = (buffer) => {
   const h = crypto.createHash("sha256").update(buffer ?? Buffer.alloc(0)).digest();
-  const severity = SEVERITIES[h[0] % SEVERITIES.length];
+  // Realistic mix for demos: 40% none, 30% partial, 20% blocked, 10% collapsed
+  const bucket = h[0] % 10;
+  const severity = bucket < 4 ? "none" : bucket < 7 ? "partial" : bucket < 9 ? "blocked" : "collapsed";
   const labels = {
     none: [],
     partial: ["debris_partial", "crack"],
@@ -62,11 +64,12 @@ const mockAssessment = (buffer) => {
 };
 
 class VisionService {
-  static async assess({ buffer, mimeType = "image/jpeg" }) {
+  static async assess({ buffer, mimeType = "image/jpeg", synthetic = false }) {
     const provider = resolveProvider("vision");
     const cfg = aiConfig("vision");
     const fallback = (reason) => ({ ...mockAssessment(buffer), provider: "mock", mock: true, fallbackReason: reason });
-    if (provider === "mock") return fallback(null);
+    // Synthetic survey frames (simulation) never go to a real model
+    if (provider === "mock" || synthetic) return fallback(synthetic ? "synthetic_frame" : null);
 
     try {
       if (provider === "yolo") {
