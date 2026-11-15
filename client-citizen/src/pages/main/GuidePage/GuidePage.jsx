@@ -18,7 +18,7 @@ export const GuidePage = () => {
   const [value, setValue] = useState(suggested ?? 'earthquake')
 
   return (
-    <div className="mx-auto max-w-xl space-y-3">
+    <div className="stagger space-y-3">
       <div className="flex items-center gap-3">
         <Icon3D name="megaphone" size={44} />
         <div>

@@ -77,6 +77,12 @@ export const applyEvent = (evt, { dispatch, getState }) => {
       break
     }
 
+    // AI assistant: refined answer for an earlier chat message (AssistantPage listens)
+    case 'ai:chat': {
+      window.dispatchEvent(new CustomEvent('safeflow:ai-chat', { detail: evt.data }))
+      break
+    }
+
     case 'system:reset': {
       dispatch(clearTicket())
       dispatch(baseApi.util.invalidateTags(ALL_TAGS))

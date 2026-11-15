@@ -70,7 +70,7 @@ export const LocationBar = () => {
       <div>
         <p id="zone-chips-label" className="mb-2 flex items-center gap-1.5 px-1 text-xs font-semibold text-muted">
           {t('evacuation.chooseZone')}
-          <span className="hidden items-center gap-1 sm:inline-flex">
+          <span className="hidden items-center gap-1">
             · <MapPinned className="h-3.5 w-3.5" aria-hidden /> {t('evacuation.orTapMap')}
           </span>
         </p>

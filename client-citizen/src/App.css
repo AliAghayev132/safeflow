@@ -41,6 +41,11 @@
   --color-info-soft: #e7efff;
 
   --color-coral: #ef5a3c; /* chips / highlights (large text or icons only) */
+  --color-backdrop: #e9ebef; /* empty space beside the phone column on desktop */
+
+  /* Always phone-sized: no responsive breakpoints — the app is one mobile
+     column at every viewport width (sm:/md:/lg: variants never apply). */
+  --breakpoint-*: initial;
 }
 
 html,
@@ -49,9 +54,19 @@ body,
   height: 100%;
 }
 
+/* Phone column: centred, max 440px, on every screen size */
+:root {
+  --app-width: 440px;
+}
+#root {
+  max-width: var(--app-width);
+  margin-inline: auto;
+  background: var(--color-canvas);
+}
+
 body {
   margin: 0;
-  background: var(--color-canvas);
+  background: var(--color-backdrop);
   color: var(--color-ink);
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
@@ -196,5 +211,154 @@ body {
 @media (prefers-reduced-motion: reduce) {
   .animate-slide-up {
     animation: none;
+  }
+}
+
+/* ============ MOTION (all disabled under prefers-reduced-motion) ============ */
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* Staggered entrance: direct children rise one after another */
+.stagger > * {
+  animation: rise 0.42s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+.stagger > *:nth-child(2) { animation-delay: 50ms; }
+.stagger > *:nth-child(3) { animation-delay: 100ms; }
+.stagger > *:nth-child(4) { animation-delay: 150ms; }
+.stagger > *:nth-child(5) { animation-delay: 200ms; }
+.stagger > *:nth-child(6) { animation-delay: 250ms; }
+.stagger > *:nth-child(7) { animation-delay: 300ms; }
+.stagger > *:nth-child(n + 8) { animation-delay: 340ms; }
+
+/* Route change: fade + slide */
+@keyframes page-in {
+  from {
+    opacity: 0;
+    transform: translateX(10px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.page-enter {
+  animation: page-in 0.28s ease-out both;
+}
+
+/* SOS button: slow breathing solid rings */
+@keyframes breathe {
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.05);
+    opacity: 0.75;
+  }
+}
+.breathe {
+  animation: breathe 3.2s ease-in-out infinite;
+}
+.breathe-delayed {
+  animation: breathe 3.2s ease-in-out 0.4s infinite;
+}
+
+/* Press / hover lift (tiles, cards) */
+.lift {
+  transition:
+    transform 0.18s ease-out,
+    background-color 0.15s ease-out;
+}
+.lift:hover:not(:disabled) {
+  transform: translateY(-3px);
+}
+.lift:active:not(:disabled) {
+  transform: scale(0.97);
+}
+
+/* Chat bubbles */
+@keyframes pop-in {
+  from {
+    opacity: 0;
+    transform: scale(0.92) translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.pop-in {
+  animation: pop-in 0.24s cubic-bezier(0.2, 0.8, 0.3, 1.2) both;
+  transform-origin: bottom left;
+}
+.pop-in-right {
+  transform-origin: bottom right;
+}
+
+/* Success check after SOS sent */
+@keyframes check-circle {
+  from {
+    transform: scale(0.4);
+    opacity: 0;
+  }
+  to {
+    transform: none;
+    opacity: 1;
+  }
+}
+@keyframes check-draw {
+  from {
+    stroke-dashoffset: 24;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+.check-circle {
+  animation: check-circle 0.32s cubic-bezier(0.2, 0.8, 0.3, 1.3) both;
+}
+.check-draw {
+  stroke-dasharray: 24;
+  animation: check-draw 0.36s ease-out 0.22s both;
+}
+
+/* Bottom nav: sliding active pill */
+.nav-indicator {
+  transition:
+    transform 0.32s cubic-bezier(0.3, 0.8, 0.3, 1),
+    opacity 0.2s ease-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .stagger > *,
+  .page-enter,
+  .breathe,
+  .breathe-delayed,
+  .pop-in,
+  .check-circle,
+  .check-draw,
+  .animate-slide-down {
+    animation: none !important;
+  }
+  .check-draw {
+    stroke-dashoffset: 0;
+  }
+  .lift,
+  .nav-indicator {
+    transition: none !important;
+  }
+  .lift:hover:not(:disabled),
+  .lift:active:not(:disabled) {
+    transform: none;
   }
 }

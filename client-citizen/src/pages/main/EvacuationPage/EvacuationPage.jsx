@@ -45,10 +45,9 @@ export const EvacuationPage = () => {
   const handlePick = (pos) => dispatch(setOrigin({ ...pos, source: 'map' }))
 
   return (
-    // Phones: location + recommendation → map → other options.
-    // Desktop: map on the left (sticky), panel on the right.
-    <div className="grid grid-cols-[minmax(0,1fr)] gap-4 lg:grid-cols-[minmax(0,1fr)_420px] lg:grid-rows-[auto_1fr] lg:items-start">
-      <section className="space-y-3 lg:col-start-2 lg:row-start-1">
+    // Always phone-sized: location + recommendation → map → other options.
+    <div className="stagger grid grid-cols-[minmax(0,1fr)] gap-4">
+      <section className="space-y-3">
         <RerouteBanner />
         <LocationBar />
         {planArgs && <AccessibleRoutePanel plan={plan} />}
@@ -80,18 +79,18 @@ export const EvacuationPage = () => {
         {recommended && <RecommendedCard recommended={recommended} />}
       </section>
 
-      <section className="lg:sticky lg:top-18 lg:col-start-1 lg:row-span-2 lg:row-start-1">
+      <section>
         <EvacuationMap
           origin={mapOrigin}
           shelters={shelters}
           recommended={recommended}
           edges={roads?.edges}
           onPick={handlePick}
-          className="h-[46vh] rounded-2xl border border-line lg:h-[calc(100vh-6.5rem)]"
+          className="h-[46vh] rounded-2xl border border-line"
         />
       </section>
 
-      <section className="space-y-2 lg:col-start-2 lg:row-start-2">
+      <section className="space-y-2">
         {others.length > 0 && (
           <>
             <h3 className="mt-1 text-sm font-bold text-ink">{t('evacuation.others')}</h3>

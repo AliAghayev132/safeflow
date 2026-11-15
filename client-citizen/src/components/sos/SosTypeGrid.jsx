@@ -27,7 +27,7 @@ export const SosTypeGrid = ({ onSend, sendingType }) => {
               disabled={Boolean(sendingType)}
               onClick={() => onSend(type.value)}
               className={clsx(
-                'group relative flex min-h-32 flex-col justify-between rounded-3xl p-4 text-left transition-colors',
+                'lift group relative flex min-h-32 flex-col justify-between rounded-3xl p-4 text-left',
                 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sos focus-visible:ring-offset-2',
                 sending ? 'bg-sos text-white' : 'bg-surface text-ink hover:bg-surface-strong active:bg-sos-soft',
                 sendingType && !sending && 'opacity-60'

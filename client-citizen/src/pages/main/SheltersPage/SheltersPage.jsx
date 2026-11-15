@@ -46,7 +46,7 @@ export const SheltersPage = () => {
   ]
 
   return (
-    <div className="mx-auto max-w-2xl space-y-4">
+    <div className="stagger space-y-4">
       <div className="flex items-center gap-3">
         <Icon3D name="map" size={44} />
         <div>

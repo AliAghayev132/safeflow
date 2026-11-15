@@ -15,6 +15,7 @@ import {
 } from '@components'
 import { useSendSos } from '@hooks'
 import { SosSignalPanel, vibrateOutcome } from '@/modules/accessibility'
+import { AssistantEntryCard } from '@/modules/assistant'
 import { selectActiveTicket } from '@store/slices'
 import { guideForSosType } from '@constants'
 import { errorMessage } from '@utils'
@@ -54,14 +55,20 @@ export const SosPage = () => {
   const live = ticket && !['resolved', 'cancelled'].includes(ticket.status)
 
   return (
-    <div className="mx-auto max-w-xl space-y-5">
+    <div className="stagger space-y-5">
       <LocationHeader />
 
       {/* Always-mounted live region so screen readers announce the outcome */}
       <div role="status" aria-live="assertive" aria-atomic="true">
         {feedback && (
-          <div className={clsx('animate-slide-down rounded-3xl px-5 py-4 text-sm font-bold', FEEDBACK_TONE[feedback.status])}>
-            {feedback.text}
+          <div
+            className={clsx(
+              'animate-slide-down flex items-center gap-3 rounded-3xl px-5 py-4 text-sm font-bold',
+              FEEDBACK_TONE[feedback.status]
+            )}
+          >
+            {(feedback.status === 'sent' || feedback.status === 'duplicate') && <SuccessCheck />}
+            <span>{feedback.text}</span>
           </div>
         )}
       </div>
@@ -91,6 +98,7 @@ export const SosPage = () => {
         </>
       )}
 
+      <AssistantEntryCard />
       <SafeShareButton />
     </div>
   )
@@ -101,3 +109,18 @@ const GuideBlock = ({ type }) => {
   const [value, setValue] = useState(guideForSosType[type] ?? 'earthquake')
   return <GuideSteps value={value} onChange={setValue} highlight={value === (guideForSosType[type] ?? 'earthquake')} />
 }
+
+/** Animated check (solid circle + drawn tick) shown after an SOS is sent. */
+const SuccessCheck = () => (
+  <svg viewBox="0 0 32 32" className="h-8 w-8 shrink-0" aria-hidden>
+    <circle cx="16" cy="16" r="16" className="check-circle fill-white" style={{ transformOrigin: 'center' }} />
+    <path
+      d="M9.5 16.5l4.5 4.5 8.5-9"
+      fill="none"
+      strokeWidth="3"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className="check-draw stroke-safe"
+    />
+  </svg>
+)

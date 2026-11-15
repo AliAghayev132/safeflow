@@ -1,4 +1,4 @@
-import { NavLink, Outlet, Link } from 'react-router'
+import { NavLink, Outlet, Link, useLocation, matchPath } from 'react-router'
 import { useTranslation } from 'react-i18next'
 import { clsx } from 'clsx'
 import { Siren, Navigation, BookOpen, UserRound } from 'lucide-react'
@@ -17,12 +17,14 @@ const navItems = [
 ]
 
 /**
- * Mobile-first shell: clean white header (app name, live state, contrast,
- * language, profile), offline banner, and a floating dark pill tab bar on
- * phones (inline pill tabs from md and up).
+ * Always phone-sized shell: one centred column (max 440px, see #root in
+ * App.css) on every screen. Clean white header, offline banner, and a
+ * floating dark pill tab bar with a sliding active pill.
  */
 export const CitizenLayout = () => {
   const { t } = useTranslation()
+  const { pathname } = useLocation()
+  const activeIndex = navItems.findIndex(({ to, end }) => matchPath({ path: to, end: Boolean(end) }, pathname))
 
   return (
     <div className="flex min-h-full flex-col bg-canvas">
@@ -35,7 +37,7 @@ export const CitizenLayout = () => {
       </a>
 
       <header className="sticky top-0 z-[500] bg-canvas">
-        <div className="mx-auto flex max-w-6xl items-center gap-2 px-4 pb-2 pt-3">
+        <div className="flex items-center gap-2 px-4 pb-2 pt-3">
           <Link to="/" className="flex min-w-0 flex-1 items-center gap-2.5 rounded-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink">
             <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-surface">
               <Icon3D name="shield" size={26} />
@@ -46,31 +48,12 @@ export const CitizenLayout = () => {
             </span>
           </Link>
 
-          <nav className="mx-2 hidden items-center gap-1 rounded-full bg-surface p-1 md:flex" aria-label={t('common.appName')}>
-            {navItems.map(({ to, key, Icon, end }) => (
-              <NavLink
-                key={to}
-                to={to}
-                end={end}
-                className={({ isActive }) =>
-                  clsx(
-                    'flex h-10 items-center gap-2 rounded-full px-4 text-sm font-semibold transition-colors',
-                    isActive ? 'bg-ink text-white' : 'text-ink-soft hover:bg-surface-strong'
-                  )
-                }
-              >
-                <Icon className="h-4 w-4" aria-hidden />
-                {t(`nav.${key}`)}
-              </NavLink>
-            ))}
-          </nav>
-
           <div className="flex shrink-0 items-center gap-1.5">
             <ContrastToggle />
             <LanguageSwitcher />
           </div>
         </div>
-        <div className="mx-auto flex max-w-6xl px-4 pb-2">
+        <div className="flex px-4 pb-2">
           <ConnectionPill />
         </div>
       </header>
@@ -78,13 +61,28 @@ export const CitizenLayout = () => {
       <OfflineBanner />
       <ModuleBanners />
 
-      <main id="main" tabIndex={-1} className="mx-auto w-full max-w-6xl flex-1 px-4 pb-32 pt-1 focus:outline-none md:pb-10">
-        <Outlet />
+      <main id="main" tabIndex={-1} className="w-full flex-1 px-4 pb-32 pt-1 focus:outline-none">
+        <div key={pathname} className="page-enter">
+          <Outlet />
+        </div>
       </main>
 
-      {/* Floating pill tab bar (phones) */}
-      <nav className="pb-safe fixed inset-x-0 bottom-0 z-[500] px-4 pb-4 md:hidden" aria-label={t('common.appName')}>
-        <div className="mx-auto flex h-16 max-w-md items-center justify-between gap-1 rounded-full bg-ink p-1.5 shadow-[0_10px_30px_rgba(13,15,20,0.28)]">
+      {/* Floating pill tab bar — always visible, constrained to the phone column */}
+      <nav
+        className="pb-safe fixed inset-x-0 bottom-0 z-[500] mx-auto max-w-[var(--app-width)] px-4 pb-4"
+        aria-label={t('common.appName')}
+      >
+        <div className="relative grid h-16 grid-cols-4 items-center rounded-full bg-ink p-1.5 shadow-[0_10px_30px_rgba(13,15,20,0.28)]">
+          {/* Sliding active pill (solid) */}
+          <span
+            aria-hidden
+            className="nav-indicator pointer-events-none absolute inset-y-1.5 left-1.5 rounded-full bg-canvas"
+            style={{
+              width: 'calc((100% - 0.75rem) / 4)',
+              transform: `translateX(${Math.max(activeIndex, 0) * 100}%)`,
+              opacity: activeIndex === -1 ? 0 : 1,
+            }}
+          />
           {navItems.map(({ to, key, Icon, end }) => (
             <NavLink
               key={to}
@@ -93,9 +91,9 @@ export const CitizenLayout = () => {
               aria-label={t(`nav.${key}`)}
               className={({ isActive }) =>
                 clsx(
-                  'flex h-full min-w-12 items-center justify-center gap-2 rounded-full text-sm font-bold transition-all',
-                  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white',
-                  isActive ? 'flex-[1.6] bg-canvas px-4 text-ink' : 'flex-1 text-white/80 hover:text-white'
+                  'relative z-10 flex h-full min-w-0 items-center justify-center gap-1.5 rounded-full px-2 text-xs font-bold transition-colors duration-300',
+                  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white active:scale-95',
+                  isActive ? 'text-ink' : 'text-white/80 hover:text-white'
                 )
               }
             >

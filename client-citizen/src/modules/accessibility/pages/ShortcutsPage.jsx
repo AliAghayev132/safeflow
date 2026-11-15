@@ -159,7 +159,7 @@ export const ShortcutsPage = () => {
           </p>
         )}
 
-        <div className="grid gap-2 sm:grid-cols-2">
+        <div className="grid gap-2">
           <Button onClick={onIssue} loading={issuing} disabled={offline} leftIcon={<KeyRound className="h-4 w-4" aria-hidden />}>
             {status?.active ? t('a11y.shortcuts.rotate') : t('a11y.shortcuts.create')}
           </Button>

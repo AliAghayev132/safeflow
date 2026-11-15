@@ -107,7 +107,7 @@ const ProfileForm = ({ profile }) => {
   }
 
   return (
-    <form onSubmit={submit} className="space-y-3">
+    <form onSubmit={submit} className="stagger space-y-3">
       <Card className="space-y-3">
         <Card.Title>{t('profile.personal')}</Card.Title>
         <Field id="fullName" label={t('profile.fullName')}>

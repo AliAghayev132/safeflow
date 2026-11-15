@@ -51,7 +51,7 @@ export const Sheet = ({ open, onClose, title, children, footer, role = 'dialog',
 
   if (!open) return null
   return createPortal(
-    <div className="fixed inset-0 z-[1200] flex items-end justify-center sm:items-center sm:p-4">
+    <div className="fixed inset-0 z-[1200] flex items-end justify-center">
       <div className="absolute inset-0 bg-ink/50" onClick={onClose} aria-hidden />
       <div
         ref={panel}
@@ -59,11 +59,11 @@ export const Sheet = ({ open, onClose, title, children, footer, role = 'dialog',
         aria-modal="true"
         aria-labelledby={titleId}
         className={clsx(
-          'pb-safe relative flex max-h-[85vh] w-full flex-col rounded-t-[28px] bg-canvas sm:max-w-md sm:rounded-[28px]',
+          'pb-safe relative flex max-h-[85vh] w-full max-w-[var(--app-width)] flex-col rounded-t-[28px] bg-canvas',
           'animate-slide-up shadow-[0_-12px_40px_rgba(13,15,20,0.18)]'
         )}
       >
-        <span className="mx-auto mt-2.5 h-1.5 w-10 rounded-full bg-surface-strong sm:hidden" aria-hidden />
+        <span className="mx-auto mt-2.5 h-1.5 w-10 rounded-full bg-surface-strong" aria-hidden />
         {title && (
           <h2 id={titleId} className="px-5 pb-2 pt-4 text-lg font-extrabold tracking-tight text-ink">
             {title}

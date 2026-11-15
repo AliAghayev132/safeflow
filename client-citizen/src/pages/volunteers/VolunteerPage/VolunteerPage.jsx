@@ -81,7 +81,7 @@ const RegisterForm = ({ profile, deviceId }) => {
       <Card.Title>{profile ? t('volunteer.form.editTitle') : t('volunteer.form.title')}</Card.Title>
       <fieldset>
         <legend className="mb-2 text-sm font-bold text-ink">{t('volunteer.form.profession')}</legend>
-        <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+        <div className="grid grid-cols-2 gap-2">
           {PROFESSIONS.map((p) => (
             <button
               key={p}
@@ -105,7 +105,7 @@ const RegisterForm = ({ profile, deviceId }) => {
         {t('volunteer.form.skills')}
         <input className={clsx(field, 'mt-1')} value={form.skills} onChange={(e) => setForm({ ...form, skills: e.target.value })} placeholder={t('volunteer.form.skillsHint')} />
       </label>
-      <div className="grid gap-3 sm:grid-cols-2">
+      <div className="grid gap-3">
         <label className="block text-sm font-bold text-ink">
           {t('volunteer.form.name')}
           <input className={clsx(field, 'mt-1')} value={form.displayName} maxLength={80} onChange={(e) => setForm({ ...form, displayName: e.target.value })} />
@@ -179,7 +179,7 @@ const StatusPanel = ({ profile, deviceId }) => {
         <span>{ready ? t('volunteer.tapNotReady') : t('volunteer.tapReady')}</span>
       </button>
 
-      <div className="grid gap-2 sm:grid-cols-2">
+      <div className="grid gap-2">
         <Button variant="outline" size="lg" onClick={shareLocation} loading={locating} leftIcon={<MapPin className="h-5 w-5" />}>
           {t('volunteer.shareLocation')}
         </Button>
