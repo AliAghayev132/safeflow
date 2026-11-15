@@ -80,7 +80,8 @@
     "tickMs": 2000,
     "arrivalMeters": 30,
     "onSceneMinutes": 20,
-    "suggestionAlternatives": 3
+    "suggestionAlternatives": 3,
+    "mismatchPenaltySec": 600
   },
   "events": {
     "bufferSize": 5000

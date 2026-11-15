@@ -6,3 +6,4 @@ export * from "./shelterScoring.js";
 export * from "./inflow.js";
 export * from "./spam.js";
 export * from "./permissions.js";
+export * from "./brigadeSuggestion.js";

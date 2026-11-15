@@ -51,6 +51,8 @@ const sosSignalSchema = new Schema(
     priority: { type: Number, default: 0, index: true },
     priorityBreakdown: { type: Schema.Types.Mixed, default: {} },
     recommendedBrigade: { type: Schema.Types.ObjectId, ref: "Brigade", default: null },
+    // { suggestion{etaSec,...}, alternatives[], noneAvailable, soonestFree }
+    brigadeSuggestion: { type: Schema.Types.Mixed, default: null },
 
     // Integrity
     spamFlags: { type: [String], default: [] },
@@ -108,6 +110,7 @@ sosSignalSchema.methods.toPublic = function () {
     priority: this.priority,
     priorityBreakdown: this.priorityBreakdown,
     recommendedBrigade: id(this.recommendedBrigade),
+    brigadeSuggestion: this.brigadeSuggestion ?? null,
     spamFlags: this.spamFlags,
     spamScore: this.spamScore,
     spamFlagged: this.spamFlagged,

@@ -21,7 +21,13 @@ class ReroutingService {
     citizen.route = plan.recommended
       ? { ...plan.recommended.route, computedAt: new Date() }
       : null;
-    await citizen.save();
+    try {
+      await citizen.save();
+    } catch (error) {
+      // Citizen removed meanwhile (e.g. simulation reset) — nothing to reroute
+      if (error.name === "DocumentNotFoundError") return false;
+      throw error;
+    }
 
     eventBus.publish(domainEvents.CITIZEN_ROUTE_UPDATED, {
       deviceId: citizen.deviceId,

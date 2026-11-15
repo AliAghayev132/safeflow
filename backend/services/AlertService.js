@@ -50,14 +50,24 @@ class AlertService {
   static async #buildActions(center, brigadeType) {
     const actions = [];
 
-    const brigade = await BrigadeService.findNearestAvailable(center, brigadeType);
+    // Auto-suggestion (flag brigadeSuggestion): best free brigade + ETA,
+    // alternatives, or the soonest-free one when nobody is available.
+    const smart = ConfigService.isEnabled("brigadeSuggestion");
+    const suggestion = smart ? BrigadeService.suggest(center, brigadeType) : null;
+    const brigade = smart
+      ? suggestion.suggestion && { _id: suggestion.suggestion.brigadeId, name: suggestion.suggestion.name }
+      : await BrigadeService.findNearestAvailable(center, brigadeType);
+    const eta = suggestion?.suggestion
+      ? ` (~${Math.max(1, Math.round(suggestion.suggestion.etaSec / 60))} dəq)`
+      : "";
     actions.push({
       type: "dispatch_brigade",
       label: brigade
-        ? `Əlavə xilasetmə briqadası göndər: ${brigade.name}`
+        ? `Əlavə xilasetmə briqadası göndər: ${brigade.name}${eta}`
         : "Əlavə xilasetmə briqadası göndər (hazırda boş briqada yoxdur)",
       brigade: brigade?._id ?? null,
       brigadeType,
+      suggestion,
     });
 
     const reserve = await ShelterService.findReserveNear(center);
@@ -272,7 +282,11 @@ class AlertService {
   }
 
   /** One-click approval: execute every recommended action. */
-  static async approve(id, operator) {
+  /**
+   * @param {object} [choice] { brigadeId } — dispatcher picked another brigade
+   *   from the suggested alternatives instead of the recommended one.
+   */
+  static async approve(id, operator, choice = {}) {
     const alert = await AlertService.getById(id);
     if (alert.status !== "active") {
       throw AppError.conflict("Bu həyəcan artıq emal olunub");
@@ -282,9 +296,11 @@ class AlertService {
     for (const action of alert.actions) {
       try {
         if (action.type === "dispatch_brigade") {
-          let brigade = action.brigade
-            ? await BrigadeService.getById(action.brigade).catch(() => null)
-            : null;
+          const chosen = choice.brigadeId ?? action.brigade;
+          let brigade = chosen ? await BrigadeService.getById(chosen).catch(() => null) : null;
+          if (choice.brigadeId && brigade && brigade.status !== "available") {
+            throw AppError.conflict(`${brigade.name} hazırda boş deyil`, "BRIGADE_BUSY");
+          }
           if (!brigade || brigade.status !== "available") {
             brigade = await BrigadeService.findNearestAvailable(
               center,

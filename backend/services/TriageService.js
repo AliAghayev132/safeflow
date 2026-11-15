@@ -28,6 +28,7 @@ class TriageService {
     const { autoAssignMinScore } = ConfigService.get("triage");
     if (sos.status !== "pending" || sos.spamFlagged || sos.citizenSafe) {
       sos.recommendedBrigade = null;
+      sos.brigadeSuggestion = null;
       return null;
     }
     // Priority #1 always gets a brigade recommendation
@@ -35,10 +36,17 @@ class TriageService {
       sos.recommendedBrigade = null;
       return null;
     }
-    const brigade = await BrigadeService.findNearestAvailable(
-      fromPoint(sos.location),
-      sosTypeToBrigadeType[sos.type],
-    );
+    const target = fromPoint(sos.location);
+    const preferred = sosTypeToBrigadeType[sos.type];
+    if (ConfigService.isEnabled("brigadeSuggestion")) {
+      // ETA-ranked suggestion; soonest-free brigade when nobody is available
+      const s = BrigadeService.suggest(target, preferred);
+      sos.brigadeSuggestion = s;
+      sos.recommendedBrigade = s.suggestion?.brigadeId ?? null;
+      return s.suggestion;
+    }
+    const brigade = await BrigadeService.findNearestAvailable(target, preferred);
+    sos.brigadeSuggestion = null;
     sos.recommendedBrigade = brigade?._id ?? null;
     return brigade;
   }

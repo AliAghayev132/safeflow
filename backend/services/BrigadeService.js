@@ -1,5 +1,6 @@
 import { Brigade } from "#models";
 import { ConfigService } from "./ConfigService.js";
+import { rankBrigades } from "#engine";
 import { domainEvents } from "#constants";
 import {
   AppError,
@@ -37,6 +38,24 @@ class BrigadeService {
       status: pub.status,
       lat: pub.lat,
       lng: pub.lng,
+      target: pub.target,
+      statusChangedAt: pub.statusChangedAt,
+    });
+  }
+
+  /**
+   * Ranked brigade suggestion for a point (pure engine over the live
+   * snapshot): best free brigade + ETA, alternatives, or — when none is
+   * free — the one that frees up soonest.
+   */
+  static suggest(target, preferredType) {
+    const cfg = ConfigService.get("brigade");
+    return rankBrigades({
+      brigades: [...BrigadeService.#snapshot.values()].map((b) => ({ ...b, id: b._id })),
+      target,
+      preferredType,
+      cfg: { ...cfg, alternatives: cfg.suggestionAlternatives },
+      now: Date.now(),
     });
   }
 

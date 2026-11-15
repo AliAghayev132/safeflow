@@ -86,7 +86,11 @@ export const dispatcherApi = baseApi.injectEndpoints({
       providesTags: ['Alerts'],
     }),
     approveAlert: builder.mutation({
-      query: (id) => ({ url: `/dispatcher/alerts/${id}/approve`, method: 'POST' }),
+      // arg: alertId, or { id, brigadeId } when the dispatcher picked an alternative
+      query: (arg) => {
+        const { id, brigadeId } = typeof arg === 'string' ? { id: arg } : arg
+        return { url: `/dispatcher/alerts/${id}/approve`, method: 'POST', body: brigadeId ? { brigadeId } : undefined }
+      },
       transformResponse: (res) => res.data.alert,
       onQueryStarted: upsertOnSuccess(alertUpserted, (a) => a),
     }),

@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import { useTranslation } from 'react-i18next'
 import { clsx } from 'clsx'
@@ -23,7 +23,57 @@ import { Badge } from '../ui/Badge'
 import { StatusBadge } from '../ui/StatusBadge'
 import { Button } from '../ui/Button'
 
-const ActionRow = ({ action, decided }) => {
+const etaMin = (sec) => Math.max(1, Math.round((Number(sec) || 0) / 60))
+
+/**
+ * Brigade auto-suggestion on an active alert: recommended brigade + ETA,
+ * pick an alternative with one click, or — when none is free — the brigade
+ * that frees up soonest.
+ */
+const BrigadeSuggestion = ({ suggestion, chosen, onChoose }) => {
+  const { t } = useTranslation()
+  if (!suggestion) return null
+  const options = [suggestion.suggestion, ...(suggestion.alternatives ?? [])].filter(Boolean)
+
+  if (!options.length) {
+    const soon = suggestion.soonestFree
+    return (
+      <p className="mt-1 text-xs font-medium text-warning flex items-start gap-1" role="status">
+        <CircleSlash className="w-3.5 h-3.5 mt-0.5 shrink-0" />
+        {soon
+          ? t('suggest.noneFree', { name: soon.name, free: etaMin(soon.freeInSec), eta: etaMin(soon.etaSec) })
+          : t('suggest.noneAtAll')}
+      </p>
+    )
+  }
+
+  return (
+    <div className="mt-1.5 flex flex-wrap gap-1.5" role="radiogroup" aria-label={t('suggest.choose')}>
+      {options.map((o, i) => {
+        const selected = (chosen ?? options[0].brigadeId) === o.brigadeId
+        return (
+          <button
+            key={o.brigadeId}
+            type="button"
+            role="radio"
+            aria-checked={selected}
+            onClick={() => onChoose(i === 0 ? null : o.brigadeId)}
+            className={clsx(
+              'h-8 px-2.5 rounded-lg border text-xs font-semibold cursor-pointer inline-flex items-center gap-1.5',
+              selected ? 'bg-critical text-white border-critical' : 'bg-panel border-border text-muted hover:text-text'
+            )}
+          >
+            {selected && <Check className="w-3.5 h-3.5" />}
+            {o.name} · {t('suggest.eta', { minutes: etaMin(o.etaSec) })}
+            {!o.typeMatch && <span className="opacity-75">· {t('suggest.otherType')}</span>}
+          </button>
+        )
+      })}
+    </div>
+  )
+}
+
+const ActionRow = ({ action, decided, chosen, onChoose }) => {
   const { t } = useTranslation()
   const brigades = useSelector(selectBrigadeEntities)
   const shelters = useSelector(selectShelterEntities)
@@ -41,6 +91,9 @@ const ActionRow = ({ action, decided }) => {
       <Icon3D name={ALERT_ACTIONS[action.type]?.icon ?? 'gear'} size={22} />
       <div className="flex-1 min-w-0">
         <p className="text-sm text-text leading-snug">{label}</p>
+        {!decided && action.type === 'dispatch_brigade' && (
+          <BrigadeSuggestion suggestion={action.suggestion} chosen={chosen} onChoose={onChoose} />
+        )}
         {decided && (
           <p
             className={clsx(
@@ -72,6 +125,8 @@ export const AlertCard = ({ alert, onFocus, fresh = false }) => {
   const [approve, { isLoading: approving }] = useApproveAlertMutation()
   const [reject, { isLoading: rejecting }] = useRejectAlertMutation()
   const [resolve, { isLoading: resolving }] = useResolveAlertMutation()
+  // Dispatcher may pick an alternative brigade before approving (null = suggested one)
+  const [chosenBrigade, setChosenBrigade] = useState(null)
 
   const isActive = alert.status === 'active'
   const type = ALERT_TYPES[alert.type] ?? ALERT_TYPES.sos_cluster
@@ -85,7 +140,10 @@ export const AlertCard = ({ alert, onFocus, fresh = false }) => {
   }, [fresh, alert.id, dispatch])
 
   const onApprove = async () => {
-    const result = await run(approve(alert.id), 'toast.alertApproved')
+    const result = await run(
+      approve(chosenBrigade ? { id: alert.id, brigadeId: chosenBrigade } : alert.id),
+      'toast.alertApproved'
+    )
     if (result) dispatch(alertAcknowledged(alert.id))
   }
   const onReject = async () => {
@@ -155,7 +213,13 @@ export const AlertCard = ({ alert, onFocus, fresh = false }) => {
           </p>
           <ul className="mt-1 divide-y divide-border/60">
             {alert.actions.map((action) => (
-              <ActionRow key={action.id} action={action} decided={!isActive} />
+              <ActionRow
+                key={action.id}
+                action={action}
+                decided={!isActive}
+                chosen={chosenBrigade}
+                onChoose={setChosenBrigade}
+              />
             ))}
           </ul>
         </div>

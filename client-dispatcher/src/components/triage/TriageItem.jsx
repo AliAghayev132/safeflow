@@ -31,6 +31,9 @@ import { Button } from '../ui/Button'
 const VULNERABLE_ICONS = { elderly: PersonStanding, child: Baby, disabled: Accessibility }
 
 /** Hover / focus popover listing how the priority score was computed. */
+// Minutes for an ETA in seconds (at least 1)
+const etaMin = (sec) => Math.max(1, Math.round((Number(sec) || 0) / 60))
+
 // Citizen special needs shown on the ticket (Priority #1 = limited mobility / wheelchair)
 const A11Y_FLAGS = ['wheelchair', 'limitedMobility', 'speechImpaired', 'hearingImpaired', 'visionImpaired']
 
@@ -251,7 +254,20 @@ export const TriageItem = ({ sos, profile, pinned = false, onFocus }) => {
                     <>
                       <Icon3D name="fireEngine" size={18} />
                       <span className="text-text">{t('triage.recommended', { name: recommended.name })}</span>
+                      {sos.brigadeSuggestion?.suggestion && (
+                        <Badge size="sm" variant="info">
+                          {t('suggest.eta', { minutes: etaMin(sos.brigadeSuggestion.suggestion.etaSec) })}
+                        </Badge>
+                      )}
                     </>
+                  ) : sos.brigadeSuggestion?.noneAvailable && sos.brigadeSuggestion.soonestFree ? (
+                    <span className="text-warning font-medium">
+                      {t('suggest.noneFree', {
+                        name: sos.brigadeSuggestion.soonestFree.name,
+                        free: etaMin(sos.brigadeSuggestion.soonestFree.freeInSec),
+                        eta: etaMin(sos.brigadeSuggestion.soonestFree.etaSec),
+                      })}
+                    </span>
                   ) : (
                     t('triage.noRecommendation')
                   )}

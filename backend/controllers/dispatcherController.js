@@ -12,7 +12,16 @@ import {
   RbacService,
   ruleEngine,
 } from "#services";
-import { asyncHandler, ok, requireEnum, AppError } from "#utils";
+import { asyncHandler, ok, requireEnum, requireCoords, AppError } from "#utils";
+
+/**
+ * GET /api/dispatcher/brigades/suggest?lat&lng&type
+ * Best free brigade + ETA, alternatives, or the soonest-free brigade.
+ */
+const suggestBrigade = asyncHandler(async (req, res) => {
+  const target = requireCoords(req.query.lat, req.query.lng);
+  return ok(res, BrigadeService.suggest(target, req.query.type ? String(req.query.type) : undefined));
+});
 
 /** GET /api/dispatcher/overview — dashboard snapshot. */
 const getOverview = asyncHandler(async (_req, res) => ok(res, await StatsService.overview()));
@@ -75,7 +84,8 @@ const listAlerts = asyncHandler(async (req, res) => {
 
 const decide = (action, fn, code) =>
   asyncHandler(async (req, res) => {
-    const alert = await fn(req.params.id, req.operator);
+    const choice = req.body?.brigadeId ? { brigadeId: String(req.body.brigadeId) } : {};
+    const alert = await fn(req.params.id, req.operator, choice);
     await AuditService.fromRequest(
       req,
       `alert.${action}`,
@@ -144,6 +154,7 @@ const updateShelter = asyncHandler(async (req, res) => {
 });
 
 export {
+  suggestBrigade,
   getOverview,
   listRules,
   getQueue,

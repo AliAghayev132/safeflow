@@ -407,6 +407,46 @@ describe("Limited mobility: Priority #1 + barrier-free evacuation", () => {
   });
 });
 
+describe("Brigade auto-suggestion", () => {
+  test("alert carries suggestion + ETA + alternatives; dispatcher can pick an alternative", async () => {
+    await resetWorld();
+    for (let i = 0; i < 4; i++) await sendSos({ type: "fire" });
+    const alert = await waitFor(async () => (await activeClusterAlerts())[0]);
+    const action = alert.actions.find((a) => a.type === "dispatch_brigade");
+    assert.ok(action.suggestion.suggestion.etaSec > 0);
+    assert.equal(action.suggestion.suggestion.type, "fire");
+    assert.ok(action.suggestion.alternatives.length >= 1);
+
+    const alternative = action.suggestion.alternatives[0].brigadeId;
+    const r = await api("POST", `/dispatcher/alerts/${alert.id}/approve`, {
+      token: dispatcher.accessToken,
+      body: { brigadeId: alternative },
+    });
+    assert.equal(r.status, 200);
+    assert.equal(r.data.alert.actions.find((a) => a.type === "dispatch_brigade").brigade, alternative);
+  });
+
+  test("no free brigade → soonest-free brigade is proposed", async () => {
+    await resetWorld();
+    const overview = (await api("GET", "/dispatcher/overview", { token: dispatcher.accessToken })).data;
+    for (const b of overview.brigades) {
+      await api("PATCH", `/dispatcher/brigades/${b.id}/status`, { token: dispatcher.accessToken, body: { status: "on_scene" } });
+    }
+    const s = (await api("GET", "/dispatcher/brigades/suggest?lat=40.4&lng=49.85&type=medical", { token: dispatcher.accessToken })).data;
+    assert.equal(s.noneAvailable, true);
+    assert.equal(s.suggestion, null);
+    assert.ok(s.soonestFree?.brigadeId);
+    assert.ok(s.soonestFree.freeInSec > 0);
+  });
+
+  test("triage tickets carry the ETA-ranked suggestion", async () => {
+    await resetWorld();
+    const r = await sendSos({ type: "medical", headcount: 3 });
+    assert.ok(r.data.sos.brigadeSuggestion?.suggestion?.etaSec > 0);
+    assert.equal(r.data.sos.recommendedBrigade, r.data.sos.brigadeSuggestion.suggestion.brigadeId);
+  });
+});
+
 describe("Feature flags", () => {
   test("public flag map, toggled at runtime by an admin", async () => {
     const before = (await api("GET", "/features")).data.features;

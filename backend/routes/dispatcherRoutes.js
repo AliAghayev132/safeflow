@@ -27,6 +27,7 @@ DispatcherRouter.patch(
   authorize("brigade:update", "brigade:update_own"),
   d.updateBrigadeStatus,
 );
+DispatcherRouter.get("/brigades/suggest", authorize("brigade:read"), d.suggestBrigade);
 DispatcherRouter.get("/my-brigade", authorize("brigade:update_own"), d.getMyBrigade);
 
 DispatcherRouter.patch("/shelters/:id", authorize("shelter:manage"), d.updateShelter);

@@ -19,6 +19,8 @@ const alertActionSchema = new Schema(
     brigade: { type: Schema.Types.ObjectId, ref: "Brigade", default: null },
     // Preferred brigade type — used to re-pick if the suggested one got busy
     brigadeType: { type: String, default: null },
+    // Auto-suggestion snapshot: { suggestion, alternatives, noneAvailable, soonestFree }
+    suggestion: { type: Schema.Types.Mixed, default: null },
     shelter: { type: Schema.Types.ObjectId, ref: "Shelter", default: null },
     executed: { type: Boolean, default: false },
     result: { type: String, default: "" },
@@ -86,6 +88,7 @@ alertSchema.methods.toPublic = function () {
       label: a.label,
       brigade: id(a.brigade),
       brigadeType: a.brigadeType,
+      suggestion: a.suggestion ?? null,
       shelter: id(a.shelter),
       executed: a.executed,
       result: a.result,
